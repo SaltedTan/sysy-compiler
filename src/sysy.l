@@ -22,10 +22,17 @@ Decimal       [1-9][0-9]*
 Octal         0[0-7]*
 Hexadecimal   0[xX][0-9a-fA-F]+
 
+%x BLOCK_COMMENT
+
 %%
 
 {WhiteSpace}    { /* Do nothing */ }
 {LineComment}   { /* Do nothing */ }
+
+"/*"                  { BEGIN(BLOCK_COMMENT); }
+<BLOCK_COMMENT>"*/"   { BEGIN(INITIAL); }
+<BLOCK_COMMENT>.      { /* Do nothing */ }
+<BLOCK_COMMENT>\n     { /* Do nothing */ }
 
 "int"           { return INT; }
 "return"        { return RETURN; }
