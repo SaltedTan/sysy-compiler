@@ -12,8 +12,10 @@ This project uses a hybrid development setup:
 
 ```text
 .
-├── build.sh             # Wrapper to configure and build the compiler inside Docker
+├── build.sh             # Wrapper to build the compiler from outside Docker
 ├── CMakeLists.txt       # Project build configuration
+├── compile.sh           # Core CMake build commands (used inside/outside Docker)
+├── shell.sh             # Drops into an interactive Docker shell
 ├── src/                 # Compiler source code
 └── update_lsp.sh        # Script to safely generate local compile_commands.json
 ```
@@ -29,8 +31,20 @@ Run the following in the project root to generate the LSP configuration:
 ```
 
 ## Build Instructions
-Do not use standard local `cmake` commands to build the project. Instead, use the provided Docker wrapper script. This script mounts the current directory into the official course container, configures the project, and executes the build.
+
+### 1. Quick Build (Outside Docker)
+Do not use standard local `cmake` commands to build the project. Instead, use the provided Docker wrapper script. This script mounts the current directory into the official course container and executes the `compile.sh` script.
 ```bash
 ./build.sh
 ```
 The compiled executable will be output to `build/compiler`.
+
+### 2. Interactive Development (Inside Docker)
+For testing specific files, debugging, or running custom commands, drop into an interactive Docker shell:
+```bash
+./shell.sh
+```
+Once inside the container (e.g. `root@xxxxxx:/root/repo#`), use the dedicated compile script to safely build the project without needing to type out the raw CMake commands:
+```bash
+./compile.sh
+```
