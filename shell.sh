@@ -1,4 +1,3 @@
-cat <<'EOF' >shell.sh
 #!/bin/bash
 
 echo "Starting interactive Docker shell..."
@@ -8,4 +7,3 @@ docker run -it --rm \
   -v $(pwd):/root/repo \
   -w /root/repo \
   maxxing/compiler-dev bash
-EOF
