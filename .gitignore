@@ -11,3 +11,5 @@ compile_commands.json
 # OS generated files
 *.DS_Store
 
+# SysY files for debugging purposes
+debug/
