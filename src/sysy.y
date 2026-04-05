@@ -43,7 +43,7 @@ FuncDef
     auto type = unique_ptr<string>($1);
     auto ident = unique_ptr<string>($2);
     auto block = unique_ptr<string>($5);
-    $$ = new string(*type + " " + *ident + "()" + *block);
+    $$ = new string(*type + " " + *ident + "() " + *block);
   }
   ;
 
