@@ -14,6 +14,7 @@ int main(int argc, const char *argv[]) {
   // compiler mode input -o output
   assert(argc == 5);
   auto mode = argv[1];
+  (void)mode;
   auto input = argv[2];
   auto output = argv[4];
 
@@ -24,7 +25,10 @@ int main(int argc, const char *argv[]) {
   auto ret = yyparse(ast);
   assert(!ret);
 
+  freopen(output, "w", stdout);
+
   ast->Dump();
   cout << endl;
+
   return 0;
 }

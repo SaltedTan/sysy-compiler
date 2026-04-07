@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <ostream>
 #include <string>
 
 class BaseAST {
@@ -16,11 +17,7 @@ class CompUnitAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> func_def;
 
-  void Dump() const override {
-    std::cout << "CompUnitAST { ";
-    func_def->Dump();
-    std::cout << " }";
-  }
+  void Dump() const override { func_def->Dump(); }
 };
 
 // FunDef ::= FuncType IDENT "(" ")" Block
@@ -31,11 +28,12 @@ public:
   std::unique_ptr<BaseAST> block;
 
   void Dump() const override {
-    std::cout << "FuncDefAST { ";
+    std::cout << "fun @" << ident << "(): ";
     func_type->Dump();
-    std::cout << ", " << ident << ", ";
+    std::cout << " {" << std::endl;
+    std::cout << "%entry:" << std::endl;
     block->Dump();
-    std::cout << " }";
+    std::cout << "}" << std::endl;
   }
 };
 
@@ -44,11 +42,7 @@ class FuncTypeAST : public BaseAST {
 public:
   std::string type_name;
 
-  void Dump() const override {
-    std::cout << "FuncTypeAST { ";
-    std::cout << type_name;
-    std::cout << " }";
-  }
+  void Dump() const override { std::cout << "i32"; }
 };
 
 // Block ::= "{" Stmt "}"
@@ -56,11 +50,7 @@ class BlockAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> stmt;
 
-  void Dump() const override {
-    std::cout << "BlockAST { ";
-    stmt->Dump();
-    std::cout << " }";
-  }
+  void Dump() const override { stmt->Dump(); }
 };
 
 // Stmt ::= "return" Number ";"
@@ -69,9 +59,9 @@ public:
   std::unique_ptr<BaseAST> number;
 
   void Dump() const override {
-    std::cout << "StmtAST { ";
+    std::cout << "  ret ";
     number->Dump();
-    std::cout << " }";
+    std::cout << std::endl;
   }
 };
 
