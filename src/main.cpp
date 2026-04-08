@@ -1,4 +1,5 @@
 #include "ast.hpp"
+#include "codegen.hpp"
 #include "koopa.h"
 #include <cassert>
 #include <cstdio>
@@ -51,8 +52,8 @@ int main(int argc, const char *argv[]) {
   (void)raw;
   koopa_delete_program(program);
 
-  // TODO: Traverse the raw program  and generate RISC-V assembly here
-  cout << "Successfully parsed Koopa IR into memory!" << endl;
+  freopen(output, "w", stdout);
+  Visit(raw);
 
   koopa_delete_raw_program_builder(builder);
   return 0;
