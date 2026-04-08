@@ -1,8 +1,11 @@
 #include "ast.hpp"
+#include "koopa.h"
 #include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <streambuf>
 #include <string>
 
 using namespace std;
@@ -13,8 +16,7 @@ extern int yyparse(unique_ptr<BaseAST> &ast);
 int main(int argc, const char *argv[]) {
   // compiler mode input -o output
   assert(argc == 5);
-  auto mode = argv[1];
-  (void)mode;
+  string mode = argv[1];
   auto input = argv[2];
   auto output = argv[4];
 
@@ -25,10 +27,33 @@ int main(int argc, const char *argv[]) {
   auto ret = yyparse(ast);
   assert(!ret);
 
-  freopen(output, "w", stdout);
-
+  // Capture the AST Dump output into a stringstream
+  ostringstream oss;
+  streambuf *old_cout_buf = cout.rdbuf(oss.rdbuf());
   ast->Dump();
-  cout << endl;
+  cout.rdbuf(old_cout_buf);
 
+  string ir_str = oss.str();
+
+  if (mode == "-koopa") {
+    freopen(output, "w", stdout);
+    cout << ir_str;
+    return 0;
+  }
+
+  koopa_program_t program;
+  koopa_error_code_t lib_ret =
+      koopa_parse_from_string(ir_str.c_str(), &program);
+  assert(lib_ret == KOOPA_EC_SUCCESS);
+
+  koopa_raw_program_builder_t builder = koopa_new_raw_program_builder();
+  koopa_raw_program_t raw = koopa_build_raw_program(builder, program);
+  (void)raw;
+  koopa_delete_program(program);
+
+  // TODO: Traverse the raw program  and generate RISC-V assembly here
+  cout << "Successfully parsed Koopa IR into memory!" << endl;
+
+  koopa_delete_raw_program_builder(builder);
   return 0;
 }
