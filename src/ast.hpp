@@ -8,8 +8,7 @@
 class BaseAST {
 public:
   virtual ~BaseAST() = default;
-
-  virtual void Dump() const = 0;
+  virtual std::string Dump() const = 0;
 };
 
 // CompUnit ::= FuncDef
@@ -17,7 +16,10 @@ class CompUnitAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> func_def;
 
-  void Dump() const override { func_def->Dump(); }
+  std::string Dump() const override {
+    func_def->Dump();
+    return "";
+  }
 };
 
 // FunDef ::= FuncType IDENT "(" ")" Block
@@ -27,13 +29,14 @@ public:
   std::string ident;
   std::unique_ptr<BaseAST> block;
 
-  void Dump() const override {
+  std::string Dump() const override {
     std::cout << "fun @" << ident << "(): ";
     func_type->Dump();
     std::cout << " {" << std::endl;
     std::cout << "%entry:" << std::endl;
     block->Dump();
     std::cout << "}" << std::endl;
+    return "";
   }
 };
 
@@ -42,7 +45,10 @@ class FuncTypeAST : public BaseAST {
 public:
   std::string type_name;
 
-  void Dump() const override { std::cout << "i32"; }
+  std::string Dump() const override {
+    std::cout << "i32";
+    return "";
+  }
 };
 
 // Block ::= "{" Stmt "}"
@@ -50,18 +56,21 @@ class BlockAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> stmt;
 
-  void Dump() const override { stmt->Dump(); }
+  std::string Dump() const override {
+    stmt->Dump();
+    return "";
+  }
 };
 
-// Stmt ::= "return" Number ";"
+// Stmt ::= "return" Exp ";"
 class StmtAST : public BaseAST {
 public:
-  std::unique_ptr<BaseAST> number;
+  std::unique_ptr<BaseAST> exp;
 
-  void Dump() const override {
-    std::cout << "  ret ";
-    number->Dump();
-    std::cout << std::endl;
+  std::string Dump() const override {
+    std::string ret_val = exp->Dump();
+    std::cout << "  ret " << ret_val << std::endl;
+    return "";
   }
 };
 
@@ -70,5 +79,41 @@ class NumberAST : public BaseAST {
 public:
   int int_const;
 
-  void Dump() const override { std::cout << int_const; }
+  std::string Dump() const override { return std::to_string(int_const); }
+};
+
+// UnaryExp ::= PrimaryExp | UnaryOp UnaryExp
+class UnaryExpAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> unaryOp;
+  std::unique_ptr<BaseAST> unaryExp;
+
+  std::string Dump() const override {
+    static int ir_reg_cnt = 0;
+
+    std::string op = unaryOp->Dump();
+    std::string inner_val = unaryExp->Dump();
+
+    if (op == "+") {
+      return inner_val;
+    } else if (op == "-") {
+      std::string new_reg = "%" + std::to_string(ir_reg_cnt++);
+      std::cout << "  " << new_reg << " = sub 0, " << inner_val << std::endl;
+      return new_reg;
+    } else if (op == "!") {
+      std::string new_reg = "%" + std::to_string(ir_reg_cnt++);
+      std::cout << "  " << new_reg << " = eq " << inner_val << ", 0"
+                << std::endl;
+      return new_reg;
+    }
+    return "";
+  }
+};
+
+// UnaryOp ::= "+" | "-" | "!"
+class UnaryOpAST : public BaseAST {
+public:
+  std::string op;
+
+  std::string Dump() const override { return op; }
 };

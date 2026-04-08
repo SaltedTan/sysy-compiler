@@ -30,7 +30,7 @@ using namespace std;
 %token <str_val> IDENT
 %token <int_val> INT_CONST
 
-%type <ast_val> FuncDef FuncType Block Stmt Number
+%type <ast_val> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp UnaryOp
 
 %%
 
@@ -69,10 +69,25 @@ Block
   ;
 
 Stmt
-  : RETURN Number ';' {
+  : RETURN Exp ';' {
     auto ast = new StmtAST();
-    ast->number = unique_ptr<BaseAST>($2);
+    ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
+  }
+  ;
+
+Exp
+  : UnaryExp {
+    $$ = $1;
+  }
+  ;
+
+PrimaryExp
+  : '(' Exp ')' {
+    $$ = $2;
+  }
+  | Number {
+    $$ = $1;
   }
   ;
 
@@ -80,6 +95,36 @@ Number
   : INT_CONST {
     auto ast = new NumberAST();
     ast->int_const = $1;
+    $$ = ast;
+  }
+  ;
+
+UnaryExp
+  : PrimaryExp {
+    $$ = $1;
+  }
+  | UnaryOp UnaryExp {
+    auto ast = new UnaryExpAST();
+    ast->unaryOp = unique_ptr<BaseAST>($1);
+    ast->unaryExp = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  }
+  ;
+
+UnaryOp
+  : '+' {
+    auto ast = new UnaryOpAST();
+    ast->op = "+";
+    $$ = ast;
+  }
+  | '-' {
+    auto ast = new UnaryOpAST();
+    ast->op = "-";
+    $$ = ast;
+  }
+  | '!' {
+    auto ast = new UnaryOpAST();
+    ast->op = "!";
     $$ = ast;
   }
   ;

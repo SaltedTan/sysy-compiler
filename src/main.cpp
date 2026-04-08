@@ -49,11 +49,12 @@ int main(int argc, const char *argv[]) {
 
   koopa_raw_program_builder_t builder = koopa_new_raw_program_builder();
   koopa_raw_program_t raw = koopa_build_raw_program(builder, program);
-  (void)raw;
   koopa_delete_program(program);
 
   freopen(output, "w", stdout);
-  Visit(raw);
+
+  RiscVGenerator generator;
+  generator.Generate(raw);
 
   koopa_delete_raw_program_builder(builder);
   return 0;
