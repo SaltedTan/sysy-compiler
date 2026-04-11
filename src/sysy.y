@@ -29,8 +29,9 @@ using namespace std;
 %token INT RETURN
 %token <str_val> IDENT
 %token <int_val> INT_CONST
+%token LE GE EQ NE AND OR
 
-%type <ast_val> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp UnaryOp MulExp MulOp AddExp AddOp 
+%type <ast_val> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp UnaryOp MulExp MulOp AddExp AddOp RelExp RelOp EqExp EqOp LAndExp LOrExp
 
 %%
 
@@ -77,7 +78,7 @@ Stmt
   ;
 
 Exp
-  : AddExp {
+  : LOrExp {
     $$ = $1;
   }
   ;
@@ -144,19 +145,19 @@ MulExp
 
 MulOp
   : '*' {
-  auto ast = new MulOpAST();
-  ast->op = "*";
-  $$ = ast;
+    auto ast = new MulOpAST();
+    ast->op = "*";
+    $$ = ast;
   }
   | '/' {
-  auto ast = new MulOpAST();
-  ast->op = "/";
-  $$ = ast;
+    auto ast = new MulOpAST();
+    ast->op = "/";
+    $$ = ast;
   }
   | '%' {
-  auto ast = new MulOpAST();
-  ast->op = "%";
-  $$ = ast;
+    auto ast = new MulOpAST();
+    ast->op = "%";
+    $$ = ast;
   }
   ;
 
@@ -175,14 +176,100 @@ AddExp
 
 AddOp
   : '+' {
-  auto ast = new AddOpAST();
-  ast->op = "+";
-  $$ = ast;
+    auto ast = new AddOpAST();
+    ast->op = "+";
+    $$ = ast;
   }
   | '-' {
-  auto ast = new AddOpAST();
-  ast->op = "-";
-  $$ = ast;
+    auto ast = new AddOpAST();
+    ast->op = "-";
+    $$ = ast;
+  }
+  ;
+
+RelExp
+  : AddExp {
+    $$ = $1;
+  }
+  | RelExp RelOp AddExp {
+    auto ast = new RelExpAST();
+    ast->lhs = unique_ptr<BaseAST>($1);
+    ast->relOp = unique_ptr<BaseAST>($2);
+    ast->rhs = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+RelOp
+  : '<' {
+    auto ast = new RelOpAST();
+    ast->op = "<";
+    $$ = ast;
+  }
+  | '>' {
+    auto ast = new RelOpAST();
+    ast->op = ">";
+    $$ = ast;
+  }
+  | LE {
+    auto ast = new RelOpAST();
+    ast->op = "<=";
+    $$ = ast;
+  }
+  | GE {
+    auto ast = new RelOpAST();
+    ast->op = ">=";
+    $$ = ast;
+  }
+  ;
+
+EqExp
+  : RelExp {
+    $$ = $1;
+  }
+  | EqExp EqOp RelExp {
+    auto ast = new EqExpAST();
+    ast->lhs = unique_ptr<BaseAST>($1);
+    ast->eqOp = unique_ptr<BaseAST>($2);
+    ast->rhs = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+EqOp
+  : EQ {
+    auto ast = new EqOpAST();
+    ast->op = "==";
+    $$ = ast;
+  }
+  | NE {
+    auto ast = new EqOpAST();
+    ast->op = "!=";
+    $$ = ast;
+  }
+  ;
+
+LAndExp
+  : EqExp {
+    $$ = $1;
+  }
+  | LAndExp AND EqExp {
+    auto ast = new LAndExpAST();
+    ast->lhs = unique_ptr<BaseAST>($1);
+    ast->rhs = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+LOrExp
+  : LAndExp {
+    $$ = $1;
+  }
+  | LOrExp OR LAndExp {
+    auto ast = new LOrExpAST();
+    ast->lhs = unique_ptr<BaseAST>($1);
+    ast->rhs = unique_ptr<BaseAST>($3);
+    $$ = ast;
   }
   ;
 

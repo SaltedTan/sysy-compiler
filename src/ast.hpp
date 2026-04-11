@@ -192,3 +192,123 @@ public:
 
   std::string Dump() const override { return op; }
 };
+
+// RelExp ::= AddExp | RelExp RelOp AddExp
+class RelExpAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> lhs;
+  std::unique_ptr<BaseAST> relOp;
+  std::unique_ptr<BaseAST> rhs;
+
+  std::string Dump() const override {
+    std::string lhs_val = lhs->Dump();
+    std::string op = relOp->Dump();
+    std::string rhs_val = rhs->Dump();
+
+    std::string new_reg = next_ir_reg();
+    if (op == "<") {
+      std::cout << "  " << new_reg << " = lt " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    } else if (op == ">") {
+      std::cout << "  " << new_reg << " = gt " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    } else if (op == "<=") {
+      std::cout << "  " << new_reg << " = le " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    } else if (op == ">=") {
+      std::cout << "  " << new_reg << " = ge " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    }
+    return "";
+  }
+};
+
+// RelOp ::= "<" | ">" | "<=" | ">="
+class RelOpAST : public BaseAST {
+public:
+  std::string op;
+
+  std::string Dump() const override { return op; }
+};
+
+// EqExp ::= RelExp | EqExp EqOp RelExp
+class EqExpAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> lhs;
+  std::unique_ptr<BaseAST> eqOp;
+  std::unique_ptr<BaseAST> rhs;
+
+  std::string Dump() const override {
+    std::string lhs_val = lhs->Dump();
+    std::string op = eqOp->Dump();
+    std::string rhs_val = rhs->Dump();
+
+    std::string new_reg = next_ir_reg();
+    if (op == "==") {
+      std::cout << "  " << new_reg << " = eq " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    } else if (op == "!=") {
+      std::cout << "  " << new_reg << " = ne " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    }
+    return "";
+  }
+};
+
+// EqOp ::= "==" | "!="
+class EqOpAST : public BaseAST {
+public:
+  std::string op;
+
+  std::string Dump() const override { return op; }
+};
+
+// LAndExp ::= EqExp | LAndExp "&&" EqExp
+class LAndExpAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> lhs;
+  std::unique_ptr<BaseAST> rhs;
+
+  std::string Dump() const override {
+    std::string lhs_val = lhs->Dump();
+    std::string rhs_val = rhs->Dump();
+
+    std::string lhs_reg = next_ir_reg();
+    std::string rhs_reg = next_ir_reg();
+    std::string dest_reg = next_ir_reg();
+
+    std::cout << "  " << lhs_reg << " = ne " << lhs_val << ", 0" << std::endl;
+    std::cout << "  " << rhs_reg << " = ne " << rhs_val << ", 0" << std::endl;
+    std::cout << "  " << dest_reg << " = and " << lhs_reg << ", " << rhs_reg
+              << std::endl;
+    return dest_reg;
+  }
+};
+
+// LOrExp ::= LAndExp | LOrExp "||" LAndExp
+class LOrExpAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> lhs;
+  std::unique_ptr<BaseAST> rhs;
+
+  std::string Dump() const override {
+    std::string lhs_val = lhs->Dump();
+    std::string rhs_val = rhs->Dump();
+
+    std::string lhs_reg = next_ir_reg();
+    std::string rhs_reg = next_ir_reg();
+    std::string dest_reg = next_ir_reg();
+
+    std::cout << "  " << lhs_reg << " = ne " << lhs_val << ", 0" << std::endl;
+    std::cout << "  " << rhs_reg << " = ne " << rhs_val << ", 0" << std::endl;
+    std::cout << "  " << dest_reg << " = or " << lhs_reg << ", " << rhs_reg
+              << std::endl;
+    return dest_reg;
+  }
+};
