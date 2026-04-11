@@ -103,14 +103,30 @@ void RiscVGenerator::Visit(const koopa_raw_value_t &value) {
     value_to_reg[value] = dest_reg;
 
     switch (kind.data.binary.op) {
-    case KOOPA_RBO_SUB:
-      cout << "  sub " << dest_reg << ", " << left_reg << ", " << right_reg
-           << endl;
-      break;
     case KOOPA_RBO_EQ:
       cout << " xor " << dest_reg << ", " << left_reg << ", " << right_reg
            << endl;
       cout << " seqz " << dest_reg << ", " << dest_reg << endl;
+      break;
+    case KOOPA_RBO_MUL:
+      cout << " mul " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_DIV:
+      cout << " div " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_MOD:
+      cout << " rem " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_ADD:
+      cout << " add " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_SUB:
+      cout << " sub " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
       break;
     default:
       assert(false);
