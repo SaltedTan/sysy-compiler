@@ -6,6 +6,9 @@
 
 using namespace std;
 
+const string REG_NAMES[] = {"t2", "t3", "t4", "t5", "t6", "a1",
+                            "a2", "a3", "a4", "a5", "a6", "a7"};
+
 void RiscVGenerator::Generate(const koopa_raw_program_t &program) {
   Visit(program.values);
   Visit(program.funcs);
@@ -79,8 +82,8 @@ void RiscVGenerator::Visit(const koopa_raw_value_t &value) {
       if (val == 0) {
         left_reg = "x0";
       } else {
-        left_reg = "t" + to_string(reg_cnt++);
-        cout << "  li " << left_reg << ", " << val << endl;
+        left_reg = "t0";
+        cout << "  li t0, " << val << endl;
       }
     } else {
       left_reg = value_to_reg[lhs];
@@ -92,14 +95,15 @@ void RiscVGenerator::Visit(const koopa_raw_value_t &value) {
       if (val == 0) {
         right_reg = "x0";
       } else {
-        right_reg = "t" + to_string(reg_cnt++);
-        cout << "  li " << right_reg << ", " << val << endl;
+        right_reg = "t1";
+        cout << "  li t1, " << val << endl;
       }
     } else {
       right_reg = value_to_reg[rhs];
     }
 
-    string dest_reg = "t" + to_string(reg_cnt++);
+    string dest_reg = REG_NAMES[reg_cnt % 12];
+    reg_cnt++;
     value_to_reg[value] = dest_reg;
 
     switch (kind.data.binary.op) {
@@ -126,6 +130,37 @@ void RiscVGenerator::Visit(const koopa_raw_value_t &value) {
       break;
     case KOOPA_RBO_SUB:
       cout << " sub " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_LT:
+      cout << " slt " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_GT:
+      cout << " sgt " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_LE:
+      cout << " sgt " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      cout << " seqz " << dest_reg << ", " << dest_reg << endl;
+      break;
+    case KOOPA_RBO_GE:
+      cout << " slt " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      cout << " seqz " << dest_reg << ", " << dest_reg << endl;
+      break;
+    case KOOPA_RBO_NOT_EQ:
+      cout << " xor " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      cout << " snez " << dest_reg << ", " << dest_reg << endl;
+      break;
+    case KOOPA_RBO_AND:
+      cout << " and " << dest_reg << ", " << left_reg << ", " << right_reg
+           << endl;
+      break;
+    case KOOPA_RBO_OR:
+      cout << " or " << dest_reg << ", " << left_reg << ", " << right_reg
            << endl;
       break;
     default:
