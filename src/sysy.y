@@ -30,7 +30,7 @@ using namespace std;
 %token <str_val> IDENT
 %token <int_val> INT_CONST
 
-%type <ast_val> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp UnaryOp
+%type <ast_val> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp UnaryOp MulExp MulOp AddExp AddOp 
 
 %%
 
@@ -77,7 +77,7 @@ Stmt
   ;
 
 Exp
-  : UnaryExp {
+  : AddExp {
     $$ = $1;
   }
   ;
@@ -126,6 +126,63 @@ UnaryOp
     auto ast = new UnaryOpAST();
     ast->op = "!";
     $$ = ast;
+  }
+  ;
+
+MulExp
+  : UnaryExp {
+    $$ = $1;
+  }
+  | MulExp MulOp UnaryExp {
+    auto ast = new MulExpAST();
+    ast->lhs = unique_ptr<BaseAST>($1);
+    ast->mulOp = unique_ptr<BaseAST>($2);
+    ast->rhs = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+MulOp
+  : '*' {
+  auto ast = new MulOpAST();
+  ast->op = "*";
+  $$ = ast;
+  }
+  | '/' {
+  auto ast = new MulOpAST();
+  ast->op = "/";
+  $$ = ast;
+  }
+  | '%' {
+  auto ast = new MulOpAST();
+  ast->op = "%";
+  $$ = ast;
+  }
+  ;
+
+AddExp
+  : MulExp {
+    $$ = $1;
+  }
+  | AddExp AddOp MulExp {
+    auto ast = new AddExpAST();
+    ast->lhs = unique_ptr<BaseAST>($1);
+    ast->addOp = unique_ptr<BaseAST>($2);
+    ast->rhs = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+AddOp
+  : '+' {
+  auto ast = new AddOpAST();
+  ast->op = "+";
+  $$ = ast;
+  }
+  | '-' {
+  auto ast = new AddOpAST();
+  ast->op = "-";
+  $$ = ast;
   }
   ;
 

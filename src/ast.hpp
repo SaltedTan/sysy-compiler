@@ -5,6 +5,11 @@
 #include <ostream>
 #include <string>
 
+inline std::string next_ir_reg() {
+  static int ir_reg_cnt = 0;
+  return "%" + std::to_string(ir_reg_cnt++);
+}
+
 class BaseAST {
 public:
   virtual ~BaseAST() = default;
@@ -89,19 +94,17 @@ public:
   std::unique_ptr<BaseAST> unaryExp;
 
   std::string Dump() const override {
-    static int ir_reg_cnt = 0;
-
     std::string op = unaryOp->Dump();
     std::string inner_val = unaryExp->Dump();
 
     if (op == "+") {
       return inner_val;
     } else if (op == "-") {
-      std::string new_reg = "%" + std::to_string(ir_reg_cnt++);
+      std::string new_reg = next_ir_reg();
       std::cout << "  " << new_reg << " = sub 0, " << inner_val << std::endl;
       return new_reg;
     } else if (op == "!") {
-      std::string new_reg = "%" + std::to_string(ir_reg_cnt++);
+      std::string new_reg = next_ir_reg();
       std::cout << "  " << new_reg << " = eq " << inner_val << ", 0"
                 << std::endl;
       return new_reg;
@@ -112,6 +115,78 @@ public:
 
 // UnaryOp ::= "+" | "-" | "!"
 class UnaryOpAST : public BaseAST {
+public:
+  std::string op;
+
+  std::string Dump() const override { return op; }
+};
+
+// MulExp ::= UnaryExp | MulExp MulOp UnaryExp
+class MulExpAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> lhs;
+  std::unique_ptr<BaseAST> mulOp;
+  std::unique_ptr<BaseAST> rhs;
+
+  std::string Dump() const override {
+    std::string lhs_val = lhs->Dump();
+    std::string op = mulOp->Dump();
+    std::string rhs_val = rhs->Dump();
+
+    std::string new_reg = next_ir_reg();
+    if (op == "*") {
+      std::cout << "  " << new_reg << " = mul " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    } else if (op == "/") {
+      std::cout << "  " << new_reg << " = div " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    } else if (op == "%") {
+      std::cout << "  " << new_reg << " = mod " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    }
+    return "";
+  }
+};
+
+// MulOp ::= "*" | "/" | "%"
+class MulOpAST : public BaseAST {
+public:
+  std::string op;
+
+  std::string Dump() const override { return op; }
+};
+
+// AddExp ::= MulExp | AddExp AddOp MulExp
+class AddExpAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> lhs;
+  std::unique_ptr<BaseAST> addOp;
+  std::unique_ptr<BaseAST> rhs;
+
+  std::string Dump() const override {
+    std::string lhs_val = lhs->Dump();
+    std::string op = addOp->Dump();
+    std::string rhs_val = rhs->Dump();
+
+    std::string new_reg = next_ir_reg();
+    if (op == "+") {
+      std::cout << "  " << new_reg << " = add " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    } else if (op == "-") {
+      std::cout << "  " << new_reg << " = sub " << lhs_val << ", " << rhs_val
+                << std::endl;
+      return new_reg;
+    }
+    return "";
+  }
+};
+
+// AddOp ::= "+" | "-"
+class AddOpAST : public BaseAST {
 public:
   std::string op;
 
