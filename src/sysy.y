@@ -106,25 +106,25 @@ UnaryExp
   }
   | UnaryOp UnaryExp {
     auto ast = new UnaryExpAST();
-    ast->unaryOp = unique_ptr<BaseAST>($1);
-    ast->unaryExp = unique_ptr<BaseAST>($2);
+    ast->op = unique_ptr<BaseAST>($1);
+    ast->exp = unique_ptr<BaseAST>($2);
     $$ = ast;
   }
   ;
 
 UnaryOp
   : '+' {
-    auto ast = new UnaryOpAST();
+    auto ast = new OpAST();
     ast->op = "+";
     $$ = ast;
   }
   | '-' {
-    auto ast = new UnaryOpAST();
+    auto ast = new OpAST();
     ast->op = "-";
     $$ = ast;
   }
   | '!' {
-    auto ast = new UnaryOpAST();
+    auto ast = new OpAST();
     ast->op = "!";
     $$ = ast;
   }
@@ -135,9 +135,9 @@ MulExp
     $$ = $1;
   }
   | MulExp MulOp UnaryExp {
-    auto ast = new MulExpAST();
+    auto ast = new BinaryExpAST();
     ast->lhs = unique_ptr<BaseAST>($1);
-    ast->mulOp = unique_ptr<BaseAST>($2);
+    ast->op = unique_ptr<BaseAST>($2);
     ast->rhs = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
@@ -145,17 +145,17 @@ MulExp
 
 MulOp
   : '*' {
-    auto ast = new MulOpAST();
+    auto ast = new OpAST();
     ast->op = "*";
     $$ = ast;
   }
   | '/' {
-    auto ast = new MulOpAST();
+    auto ast = new OpAST();
     ast->op = "/";
     $$ = ast;
   }
   | '%' {
-    auto ast = new MulOpAST();
+    auto ast = new OpAST();
     ast->op = "%";
     $$ = ast;
   }
@@ -166,9 +166,9 @@ AddExp
     $$ = $1;
   }
   | AddExp AddOp MulExp {
-    auto ast = new AddExpAST();
+    auto ast = new BinaryExpAST();
     ast->lhs = unique_ptr<BaseAST>($1);
-    ast->addOp = unique_ptr<BaseAST>($2);
+    ast->op = unique_ptr<BaseAST>($2);
     ast->rhs = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
@@ -176,12 +176,12 @@ AddExp
 
 AddOp
   : '+' {
-    auto ast = new AddOpAST();
+    auto ast = new OpAST();
     ast->op = "+";
     $$ = ast;
   }
   | '-' {
-    auto ast = new AddOpAST();
+    auto ast = new OpAST();
     ast->op = "-";
     $$ = ast;
   }
@@ -192,9 +192,9 @@ RelExp
     $$ = $1;
   }
   | RelExp RelOp AddExp {
-    auto ast = new RelExpAST();
+    auto ast = new BinaryExpAST();
     ast->lhs = unique_ptr<BaseAST>($1);
-    ast->relOp = unique_ptr<BaseAST>($2);
+    ast->op = unique_ptr<BaseAST>($2);
     ast->rhs = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
@@ -202,22 +202,22 @@ RelExp
 
 RelOp
   : '<' {
-    auto ast = new RelOpAST();
+    auto ast = new OpAST();
     ast->op = "<";
     $$ = ast;
   }
   | '>' {
-    auto ast = new RelOpAST();
+    auto ast = new OpAST();
     ast->op = ">";
     $$ = ast;
   }
   | LE {
-    auto ast = new RelOpAST();
+    auto ast = new OpAST();
     ast->op = "<=";
     $$ = ast;
   }
   | GE {
-    auto ast = new RelOpAST();
+    auto ast = new OpAST();
     ast->op = ">=";
     $$ = ast;
   }
@@ -228,9 +228,9 @@ EqExp
     $$ = $1;
   }
   | EqExp EqOp RelExp {
-    auto ast = new EqExpAST();
+    auto ast = new BinaryExpAST();
     ast->lhs = unique_ptr<BaseAST>($1);
-    ast->eqOp = unique_ptr<BaseAST>($2);
+    ast->op = unique_ptr<BaseAST>($2);
     ast->rhs = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
@@ -238,12 +238,12 @@ EqExp
 
 EqOp
   : EQ {
-    auto ast = new EqOpAST();
+    auto ast = new OpAST();
     ast->op = "==";
     $$ = ast;
   }
   | NE {
-    auto ast = new EqOpAST();
+    auto ast = new OpAST();
     ast->op = "!=";
     $$ = ast;
   }
@@ -254,8 +254,9 @@ LAndExp
     $$ = $1;
   }
   | LAndExp AND EqExp {
-    auto ast = new LAndExpAST();
+    auto ast = new LogicalExpAST();
     ast->lhs = unique_ptr<BaseAST>($1);
+    ast->op = "and";
     ast->rhs = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
@@ -266,8 +267,9 @@ LOrExp
     $$ = $1;
   }
   | LOrExp OR LAndExp {
-    auto ast = new LOrExpAST();
+    auto ast = new LogicalExpAST();
     ast->lhs = unique_ptr<BaseAST>($1);
+    ast->op = "or";
     ast->rhs = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
