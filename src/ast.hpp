@@ -18,7 +18,17 @@ struct Symbol {
   std::string ir_id;
 };
 
-inline std::unordered_map<std::string, Symbol> symbol_table;
+class Environment {
+private:
+  std::unordered_map<std::string, Symbol> table;
+
+public:
+  void insert(const std::string &name, Symbol sym) { table[name] = sym; }
+
+  Symbol lookup(const std::string &name) const { return table.at(name); }
+};
+
+inline Environment symbol_table;
 
 inline std::string to_koopa_op(const std::string &op) {
   if (op == "+")
@@ -107,17 +117,17 @@ public:
   std::string ident;
 
   std::string Dump() const override {
-    if (symbol_table[ident].is_const) {
-      return std::to_string(symbol_table[ident].val);
+    if (symbol_table.lookup(ident).is_const) {
+      return std::to_string(symbol_table.lookup(ident).val);
     }
 
     std::string dest_reg = next_ir_reg();
-    std::string ir_id = symbol_table[ident].ir_id;
+    std::string ir_id = symbol_table.lookup(ident).ir_id;
     std::cout << "  " << dest_reg << " = load " << ir_id << std::endl;
     return dest_reg;
   }
 
-  int Evaluate() const override { return symbol_table[ident].val; }
+  int Evaluate() const override { return symbol_table.lookup(ident).val; }
 };
 
 class StmtAST : public BaseAST {};
@@ -142,7 +152,7 @@ public:
     std::string rhs_val = exp->Dump();
     auto lval_ast = dynamic_cast<LValAST *>(lVal.get());
     std::string var_name = lval_ast->ident;
-    std::string ir_id = symbol_table[var_name].ir_id;
+    std::string ir_id = symbol_table.lookup(var_name).ir_id;
 
     std::cout << "  store " << rhs_val << ", " << ir_id << std::endl;
     return "";
@@ -300,7 +310,7 @@ public:
 
   std::string Dump() const override {
     int val = constInitVal->Evaluate();
-    symbol_table[ident] = {true, val, ""};
+    symbol_table.insert(ident, {true, val, ""});
     return "";
   }
 };
@@ -314,7 +324,7 @@ public:
     std::string ident_str = "@" + ident;
 
     std::cout << "  " << ident_str << " = alloc i32" << std::endl;
-    symbol_table[ident] = {false, 0, ident_str};
+    symbol_table.insert(ident, {false, 0, ident_str});
 
     if (initVal != nullptr) {
       std::string init_val_str = initVal->Dump();
