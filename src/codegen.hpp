@@ -6,8 +6,9 @@
 
 class RiscVGenerator {
 private:
-  int reg_cnt = 0;
-  std::unordered_map<koopa_raw_value_t, std::string> value_to_reg;
+  int current_stack_size = 0;
+  int aligned_stack_size = 0;
+  std::unordered_map<koopa_raw_value_t, int> stack_map;
 
 public:
   void Generate(const koopa_raw_program_t &program);
@@ -20,7 +21,9 @@ private:
 
   void VisitReturn(const koopa_raw_return_t &ret);
   void VisitBinary(const koopa_raw_binary_t &binary,
-                   const std::string &dest_reg);
+                   const koopa_raw_value_t &value);
+  void VisitStore(const koopa_raw_store_t &store);
+  void VisitLoad(const koopa_raw_load_t &load, const koopa_raw_value_t &value);
 
   std::string FetchOperand(const koopa_raw_value_t &operand,
                            const std::string &temp_reg);
