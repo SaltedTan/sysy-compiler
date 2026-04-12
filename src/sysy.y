@@ -37,6 +37,7 @@ using namespace std;
 %type <ast_val> UnaryOp MulOp AddOp RelOp EqOp
 %type <ast_val> Decl ConstDecl ConstDefList ConstDef ConstInitVal
 %type <ast_val> BlockItem BlockItemList LVal ConstExp
+%type <ast_val> VarDecl VarDefList VarDef InitVal 
 
 %%
 
@@ -94,9 +95,16 @@ BlockItem
   ;
 
 Stmt
-  : RETURN Exp ';' {
+  : LVal '=' Exp ';' {
+    auto ast = new StmtAST();
+    ast->lVal = unique_ptr<BaseAST>($1);
+    ast->exp = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  | RETURN Exp ';' {
     auto ast = new StmtAST();
     ast->exp = unique_ptr<BaseAST>($2);
+    ast->is_return = true;
     $$ = ast;
   }
   ;
@@ -306,8 +314,12 @@ Decl
   : ConstDecl {
     $$ = $1;
   }
+  | VarDecl {
+    $$ = $1;
+  }
   ;
 
+// ConstDecl ::= "const" BType ConstDef {"," ConstDef} ";"
 ConstDecl
   : CONST BType ConstDefList ';' {
     $$ = $3;
@@ -342,6 +354,46 @@ ConstDef
 
 ConstInitVal
   : ConstExp {
+    $$ = $1;
+  }
+  ;
+
+// VarDecl ::= BType VarDef {"," VarDef} ";"
+VarDecl
+  : BType VarDefList ';' {
+    $$ = $2;
+  }
+  ;
+
+VarDefList
+  : VarDef {
+    auto ast = new VarDeclAST();
+    ast->defs.push_back(unique_ptr<BaseAST>($1));
+    $$ = ast;
+  }
+  | VarDefList ',' VarDef {
+    auto ast = dynamic_cast<VarDeclAST*>($1);
+    ast->defs.push_back(unique_ptr<BaseAST>($3));
+    $$ = ast;
+  }
+  ;
+
+VarDef
+  : IDENT {
+    auto ast = new VarDefAST();
+    ast->ident = *unique_ptr<string>($1);
+    $$ = ast;
+  }
+  | IDENT '=' InitVal {
+    auto ast = new VarDefAST();
+    ast->ident = *unique_ptr<string>($1);
+    ast->initVal = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+InitVal
+  : Exp {
     $$ = $1;
   }
   ;

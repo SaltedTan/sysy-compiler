@@ -12,7 +12,13 @@ inline std::string next_ir_reg() {
   return "%" + std::to_string(ir_reg_cnt++);
 }
 
-inline std::unordered_map<std::string, int> symbol_table;
+struct Symbol {
+  bool is_const;
+  int val;
+  std::string ir_id;
+};
+
+inline std::unordered_map<std::string, Symbol> symbol_table;
 
 inline std::string to_koopa_op(const std::string &op) {
   if (op == "+")
@@ -96,13 +102,41 @@ public:
   }
 };
 
+class LValAST : public BaseAST {
+public:
+  std::string ident;
+
+  std::string Dump() const override {
+    if (symbol_table[ident].is_const) {
+      return std::to_string(symbol_table[ident].val);
+    }
+
+    std::string dest_reg = next_ir_reg();
+    std::string ir_id = symbol_table[ident].ir_id;
+    std::cout << "  " << dest_reg << " = load " << ir_id << std::endl;
+    return dest_reg;
+  }
+
+  int Evaluate() const override { return symbol_table[ident].val; }
+};
+
 class StmtAST : public BaseAST {
 public:
+  bool is_return = false;
+  std::unique_ptr<BaseAST> lVal;
   std::unique_ptr<BaseAST> exp;
 
   std::string Dump() const override {
-    std::string ret_val = exp->Dump();
-    std::cout << "  ret " << ret_val << std::endl;
+    if (is_return) {
+      std::string ret_val = exp->Dump();
+      std::cout << "  ret " << ret_val << std::endl;
+    } else {
+      std::string rhs_val = exp->Dump();
+      auto lval_ast = dynamic_cast<LValAST *>(lVal.get());
+      std::string var_name = lval_ast->ident;
+      std::string ir_id = symbol_table[var_name].ir_id;
+      std::cout << "  store " << rhs_val << ", " << ir_id << std::endl;
+    }
     return "";
   }
 };
@@ -258,18 +292,38 @@ public:
 
   std::string Dump() const override {
     int val = constInitVal->Evaluate();
-    symbol_table[ident] = val;
+    symbol_table[ident] = {true, val, ""};
     return "";
   }
 };
 
-class LValAST : public BaseAST {
+class VarDeclAST : public BaseAST {
 public:
-  std::string ident;
+  std::vector<std::unique_ptr<BaseAST>> defs;
 
   std::string Dump() const override {
-    return std::to_string(symbol_table[ident]);
+    for (const auto &def : defs) {
+      def->Dump();
+    }
+    return "";
   }
+};
 
-  int Evaluate() const override { return symbol_table[ident]; }
+class VarDefAST : public BaseAST {
+public:
+  std::string ident;
+  std::unique_ptr<BaseAST> initVal;
+
+  std::string Dump() const override {
+    std::string ident_str = "@" + ident;
+
+    std::cout << "  " << ident_str << " = alloc i32" << std::endl;
+    symbol_table[ident] = {false, 0, ident_str};
+
+    if (initVal != nullptr) {
+      std::string init_val_str = initVal->Dump();
+      std::cout << "  store " << init_val_str << ", " << ident_str << std::endl;
+    }
+    return "";
+  }
 };
