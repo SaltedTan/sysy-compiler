@@ -327,12 +327,12 @@ ConstDecl
 
 ConstDefList
   : ConstDef {
-    auto ast = new ConstDeclAST();
+    auto ast = new DeclAST();
     ast->defs.push_back(unique_ptr<BaseAST>($1));
     $$ = ast;
   }
   | ConstDefList ',' ConstDef {
-    auto ast = dynamic_cast<ConstDeclAST*>($1);
+    auto ast = dynamic_cast<DeclAST*>($1);
     ast->defs.push_back(unique_ptr<BaseAST>($3));
     $$ = ast;
   }
@@ -366,12 +366,12 @@ VarDecl
 
 VarDefList
   : VarDef {
-    auto ast = new VarDeclAST();
+    auto ast = new DeclAST();
     ast->defs.push_back(unique_ptr<BaseAST>($1));
     $$ = ast;
   }
   | VarDefList ',' VarDef {
-    auto ast = dynamic_cast<VarDeclAST*>($1);
+    auto ast = dynamic_cast<DeclAST*>($1);
     ast->defs.push_back(unique_ptr<BaseAST>($3));
     $$ = ast;
   }

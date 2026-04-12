@@ -281,7 +281,7 @@ public:
   std::string Dump() const override { return op; }
 };
 
-class ConstDeclAST : public BaseAST {
+class DeclAST : public BaseAST {
 public:
   std::vector<std::unique_ptr<BaseAST>> defs;
 
@@ -301,18 +301,6 @@ public:
   std::string Dump() const override {
     int val = constInitVal->Evaluate();
     symbol_table[ident] = {true, val, ""};
-    return "";
-  }
-};
-
-class VarDeclAST : public BaseAST {
-public:
-  std::vector<std::unique_ptr<BaseAST>> defs;
-
-  std::string Dump() const override {
-    for (const auto &def : defs) {
-      def->Dump();
-    }
     return "";
   }
 };
