@@ -4,11 +4,15 @@
 #include <memory>
 #include <ostream>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 inline std::string next_ir_reg() {
   static int ir_reg_cnt = 0;
   return "%" + std::to_string(ir_reg_cnt++);
 }
+
+inline std::unordered_map<std::string, int> symbol_table;
 
 inline std::string to_koopa_op(const std::string &op) {
   if (op == "+")
@@ -40,9 +44,9 @@ class BaseAST {
 public:
   virtual ~BaseAST() = default;
   virtual std::string Dump() const = 0;
+  virtual int Evaluate() const { return 0; }
 };
 
-// CompUnit ::= FuncDef
 class CompUnitAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> func_def;
@@ -53,7 +57,6 @@ public:
   }
 };
 
-// FunDef ::= FuncType IDENT "(" ")" Block
 class FuncDefAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> func_type;
@@ -71,7 +74,6 @@ public:
   }
 };
 
-// FuncType ::= "int"
 class FuncTypeAST : public BaseAST {
 public:
   std::string type_name;
@@ -82,18 +84,18 @@ public:
   }
 };
 
-// Block ::= "{" Stmt "}"
 class BlockAST : public BaseAST {
 public:
-  std::unique_ptr<BaseAST> stmt;
+  std::vector<std::unique_ptr<BaseAST>> items;
 
   std::string Dump() const override {
-    stmt->Dump();
+    for (const auto &item : items) {
+      item->Dump();
+    }
     return "";
   }
 };
 
-// Stmt ::= "return" Exp ";"
 class StmtAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> exp;
@@ -105,15 +107,15 @@ public:
   }
 };
 
-// Number ::= INT_CONST
 class NumberAST : public BaseAST {
 public:
   int int_const;
 
   std::string Dump() const override { return std::to_string(int_const); }
+
+  int Evaluate() const override { return int_const; }
 };
 
-// UnaryExp ::= PrimaryExp | UnaryOp UnaryExp
 class UnaryExpAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> op;
@@ -137,6 +139,18 @@ public:
     }
     return "";
   }
+
+  int Evaluate() const override {
+    int inner_val = exp->Evaluate();
+    std::string op_str = op->Dump();
+    if (op_str == "+")
+      return inner_val;
+    if (op_str == "-")
+      return -inner_val;
+    if (op_str == "!")
+      return inner_val == 0;
+    return 0;
+  }
 };
 
 class BinaryExpAST : public BaseAST {
@@ -156,6 +170,34 @@ public:
               << lhs_val << ", " << rhs_val << std::endl;
 
     return new_reg;
+  }
+  int Evaluate() const override {
+    int lhs_val = lhs->Evaluate();
+    std::string op_str = op->Dump();
+    int rhs_val = rhs->Evaluate();
+    if (op_str == "+")
+      return lhs_val + rhs_val;
+    if (op_str == "-")
+      return lhs_val - rhs_val;
+    if (op_str == "*")
+      return lhs_val * rhs_val;
+    if (op_str == "/")
+      return lhs_val / rhs_val;
+    if (op_str == "%")
+      return lhs_val % rhs_val;
+    if (op_str == "<")
+      return lhs_val < rhs_val;
+    if (op_str == ">")
+      return lhs_val > rhs_val;
+    if (op_str == "<=")
+      return lhs_val <= rhs_val;
+    if (op_str == ">=")
+      return lhs_val >= rhs_val;
+    if (op_str == "==")
+      return lhs_val == rhs_val;
+    if (op_str == "!=")
+      return lhs_val != rhs_val;
+    return 0;
   }
 };
 
@@ -179,10 +221,55 @@ public:
               << rhs_reg << std::endl;
     return dest_reg;
   }
+
+  int Evaluate() const override {
+    int lhs_val = lhs->Evaluate();
+    int rhs_val = rhs->Evaluate();
+    if (op == "and")
+      return lhs_val && rhs_val;
+    if (op == "or")
+      return lhs_val || rhs_val;
+    return 0;
+  }
 };
 
 class OpAST : public BaseAST {
 public:
   std::string op;
   std::string Dump() const override { return op; }
+};
+
+class ConstDeclAST : public BaseAST {
+public:
+  std::vector<std::unique_ptr<BaseAST>> defs;
+
+  std::string Dump() const override {
+    for (const auto &def : defs) {
+      def->Dump();
+    }
+    return "";
+  }
+};
+
+class ConstDefAST : public BaseAST {
+public:
+  std::string ident;
+  std::unique_ptr<BaseAST> constInitVal;
+
+  std::string Dump() const override {
+    int val = constInitVal->Evaluate();
+    symbol_table[ident] = val;
+    return "";
+  }
+};
+
+class LValAST : public BaseAST {
+public:
+  std::string ident;
+
+  std::string Dump() const override {
+    return std::to_string(symbol_table[ident]);
+  }
+
+  int Evaluate() const override { return symbol_table[ident]; }
 };

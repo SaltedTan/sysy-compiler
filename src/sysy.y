@@ -30,8 +30,13 @@ using namespace std;
 %token <str_val> IDENT
 %token <int_val> INT_CONST
 %token LE GE EQ NE AND OR
+%token CONST
 
-%type <ast_val> FuncDef FuncType Block Stmt Number Exp PrimaryExp UnaryExp UnaryOp MulExp MulOp AddExp AddOp RelExp RelOp EqExp EqOp LAndExp LOrExp
+%type <ast_val> FuncDef FuncType Block Stmt Number
+%type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
+%type <ast_val> UnaryOp MulOp AddOp RelOp EqOp
+%type <ast_val> Decl ConstDecl ConstDefList ConstDef ConstInitVal
+%type <ast_val> BlockItem BlockItemList LVal ConstExp
 
 %%
 
@@ -62,10 +67,29 @@ FuncType
   ;
 
 Block
-  : '{' Stmt '}' {
+  : '{' BlockItemList '}' {
+    $$ = $2;
+  }
+  ;
+
+BlockItemList
+  : /* empty */ {
     auto ast = new BlockAST();
-    ast->stmt = unique_ptr<BaseAST>($2);
     $$ = ast;
+  }
+  | BlockItemList BlockItem {
+    auto ast = dynamic_cast<BlockAST*>($1);
+    ast->items.push_back(unique_ptr<BaseAST>($2));
+    $$ = ast;
+  }
+  ;
+
+BlockItem
+  : Decl {
+    $$ = $1;
+  }
+  | Stmt {
+    $$ = $1;
   }
   ;
 
@@ -86,6 +110,9 @@ Exp
 PrimaryExp
   : '(' Exp ')' {
     $$ = $2;
+  }
+  | LVal {
+    $$ = $1;
   }
   | Number {
     $$ = $1;
@@ -272,6 +299,64 @@ LOrExp
     ast->op = "or";
     ast->rhs = unique_ptr<BaseAST>($3);
     $$ = ast;
+  }
+  ;
+
+Decl
+  : ConstDecl {
+    $$ = $1;
+  }
+  ;
+
+ConstDecl
+  : CONST BType ConstDefList ';' {
+    $$ = $3;
+  }
+  ;
+
+ConstDefList
+  : ConstDef {
+    auto ast = new ConstDeclAST();
+    ast->defs.push_back(unique_ptr<BaseAST>($1));
+    $$ = ast;
+  }
+  | ConstDefList ',' ConstDef {
+    auto ast = dynamic_cast<ConstDeclAST*>($1);
+    ast->defs.push_back(unique_ptr<BaseAST>($3));
+    $$ = ast;
+  }
+  ;
+
+BType
+  : INT
+  ;
+
+ConstDef
+  : IDENT '=' ConstInitVal {
+    auto ast = new ConstDefAST();
+    ast->ident = *unique_ptr<string>($1);
+    ast->constInitVal = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
+  ;
+
+ConstInitVal
+  : ConstExp {
+    $$ = $1;
+  }
+  ;
+
+LVal
+  : IDENT {
+    auto ast = new LValAST();
+    ast->ident = *unique_ptr<string>($1);
+    $$ = ast;
+  }
+  ;
+
+ConstExp
+  : Exp {
+    $$ = $1;
   }
   ;
 
