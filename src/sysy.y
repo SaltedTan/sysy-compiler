@@ -96,15 +96,14 @@ BlockItem
 
 Stmt
   : LVal '=' Exp ';' {
-    auto ast = new StmtAST();
+    auto ast = new AssignStmtAST();
     ast->lVal = unique_ptr<BaseAST>($1);
     ast->exp = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
   | RETURN Exp ';' {
-    auto ast = new StmtAST();
+    auto ast = new ReturnStmtAST();
     ast->exp = unique_ptr<BaseAST>($2);
-    ast->is_return = true;
     $$ = ast;
   }
   ;

@@ -120,23 +120,31 @@ public:
   int Evaluate() const override { return symbol_table[ident].val; }
 };
 
-class StmtAST : public BaseAST {
+class StmtAST : public BaseAST {};
+
+class ReturnStmtAST : public StmtAST {
 public:
-  bool is_return = false;
+  std::unique_ptr<BaseAST> exp;
+
+  std::string Dump() const override {
+    std::string ret_val = exp->Dump();
+    std::cout << "  ret " << ret_val << std::endl;
+    return "";
+  }
+};
+
+class AssignStmtAST : public StmtAST {
+public:
   std::unique_ptr<BaseAST> lVal;
   std::unique_ptr<BaseAST> exp;
 
   std::string Dump() const override {
-    if (is_return) {
-      std::string ret_val = exp->Dump();
-      std::cout << "  ret " << ret_val << std::endl;
-    } else {
-      std::string rhs_val = exp->Dump();
-      auto lval_ast = dynamic_cast<LValAST *>(lVal.get());
-      std::string var_name = lval_ast->ident;
-      std::string ir_id = symbol_table[var_name].ir_id;
-      std::cout << "  store " << rhs_val << ", " << ir_id << std::endl;
-    }
+    std::string rhs_val = exp->Dump();
+    auto lval_ast = dynamic_cast<LValAST *>(lVal.get());
+    std::string var_name = lval_ast->ident;
+    std::string ir_id = symbol_table[var_name].ir_id;
+
+    std::cout << "  store " << rhs_val << ", " << ir_id << std::endl;
     return "";
   }
 };
