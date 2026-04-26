@@ -298,18 +298,63 @@ public:
   std::unique_ptr<BaseAST> rhs;
 
   std::string Dump() const override {
+    static int logical_cnt = 0;
+    int current_cnt = logical_cnt++;
+
+    std::string res_alloc = "@logical_res_" + std::to_string(current_cnt);
+    std::string true_block = "@logical_true_" + std::to_string(current_cnt);
+    std::string false_block = "@logical_false_" + std::to_string(current_cnt);
+    std::string end_block = "@logical_end_" + std::to_string(current_cnt);
+
+    std::cout << "  " << res_alloc << " = alloc i32" << std::endl;
+
     std::string lhs_val = lhs->Dump();
-    std::string rhs_val = rhs->Dump();
 
-    std::string lhs_reg = next_ir_reg();
-    std::string rhs_reg = next_ir_reg();
-    std::string dest_reg = next_ir_reg();
+    std::cout << "  br " << lhs_val << ", " << true_block << ", " << false_block
+              << std::endl;
 
-    std::cout << "  " << lhs_reg << " = ne " << lhs_val << ", 0" << std::endl;
-    std::cout << "  " << rhs_reg << " = ne " << rhs_val << ", 0" << std::endl;
-    std::cout << "  " << dest_reg << " = " << op << " " << lhs_reg << ", "
-              << rhs_reg << std::endl;
-    return dest_reg;
+    if (op == "or") {
+      // --- OR: Short-circuit on TRUE ---
+      std::cout << std::endl << true_block << ":" << std::endl;
+      is_block_terminated = false;
+      std::cout << "  store 1, " << res_alloc << std::endl;
+      std::cout << "  jump " << end_block << std::endl;
+
+      // --- OR: Evaluate RHS on FALSE ---
+      std::cout << std::endl << false_block << ":" << std::endl;
+      is_block_terminated = false;
+      std::string rhs_val = rhs->Dump();
+      std::string rhs_bool = next_ir_reg();
+      std::cout << "  " << rhs_bool << " = ne " << rhs_val << ", 0"
+                << std::endl;
+      std::cout << "  store " << rhs_bool << ", " << res_alloc << std::endl;
+      std::cout << "  jump " << end_block << std::endl;
+
+    } else if (op == "and") {
+      // --- AND: Evaluate RHS on TRUE ---
+      std::cout << std::endl << true_block << ":" << std::endl;
+      is_block_terminated = false;
+      std::string rhs_val = rhs->Dump();
+      std::string rhs_bool = next_ir_reg();
+      std::cout << "  " << rhs_bool << " = ne " << rhs_val << ", 0"
+                << std::endl;
+      std::cout << "  store " << rhs_bool << ", " << res_alloc << std::endl;
+      std::cout << "  jump " << end_block << std::endl;
+
+      // --- AND: Short-circuit on FALSE ---
+      std::cout << std::endl << false_block << ":" << std::endl;
+      is_block_terminated = false;
+      std::cout << "  store 0, " << res_alloc << std::endl;
+      std::cout << "  jump " << end_block << std::endl;
+    }
+
+    std::cout << std::endl << end_block << ":" << std::endl;
+    is_block_terminated = false;
+
+    std::string final_res = next_ir_reg();
+    std::cout << "  " << final_res << " = load " << res_alloc << std::endl;
+
+    return final_res;
   }
 
   int Evaluate() const override {
