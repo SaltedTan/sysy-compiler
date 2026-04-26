@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cassert>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -12,6 +13,11 @@ inline std::string next_ir_reg() {
   return "%" + std::to_string(ir_reg_cnt++);
 }
 
+inline std::string next_var_name(const std::string &name) {
+  static int var_cnt = 0;
+  return "@" + name + "_" + std::to_string(var_cnt++);
+}
+
 struct Symbol {
   bool is_const;
   int val;
@@ -20,12 +26,30 @@ struct Symbol {
 
 class Environment {
 private:
-  std::unordered_map<std::string, Symbol> table;
+  std::vector<std::unordered_map<std::string, Symbol>> scope_stack;
 
 public:
-  void insert(const std::string &name, Symbol sym) { table[name] = sym; }
+  Environment() { scope_stack.push_back({}); }
 
-  Symbol lookup(const std::string &name) const { return table.at(name); }
+  void insert(const std::string &name, Symbol sym) {
+    scope_stack.back()[name] = sym;
+  }
+
+  Symbol lookup(const std::string &name) const {
+    for (auto it = scope_stack.rbegin(); it != scope_stack.rend(); ++it) {
+      auto found = it->find(name);
+      if (found != it->end()) {
+        return found->second;
+      }
+    }
+
+    std::cerr << "Error: Undefined variable '" << name << "'" << std::endl;
+    exit(1);
+  }
+
+  void enter_scope() { scope_stack.push_back({}); }
+
+  void exit_scope() { scope_stack.pop_back(); }
 };
 
 inline Environment symbol_table;
@@ -105,9 +129,13 @@ public:
   std::vector<std::unique_ptr<BaseAST>> items;
 
   std::string Dump() const override {
+    symbol_table.enter_scope();
     for (const auto &item : items) {
-      item->Dump();
+      if (item != nullptr) {
+        item->Dump();
+      }
     }
+    symbol_table.exit_scope();
     return "";
   }
 };
@@ -137,9 +165,15 @@ public:
   std::unique_ptr<BaseAST> exp;
 
   std::string Dump() const override {
-    std::string ret_val = exp->Dump();
-    std::cout << "  ret " << ret_val << std::endl;
-    return "";
+    if (exp) {
+      std::string ret_val = exp->Dump();
+      std::cout << "  ret " << ret_val << std::endl;
+      return "";
+
+    } else {
+      std::cout << "  ret" << std::endl;
+      return "";
+    }
   }
 };
 
@@ -321,14 +355,13 @@ public:
   std::unique_ptr<BaseAST> initVal;
 
   std::string Dump() const override {
-    std::string ident_str = "@" + ident;
-
-    std::cout << "  " << ident_str << " = alloc i32" << std::endl;
-    symbol_table.insert(ident, {false, 0, ident_str});
+    std::string ir_id = next_var_name(ident);
+    std::cout << "  " << ir_id << " = alloc i32" << std::endl;
+    symbol_table.insert(ident, {false, 0, ir_id});
 
     if (initVal != nullptr) {
       std::string init_val_str = initVal->Dump();
-      std::cout << "  store " << init_val_str << ", " << ident_str << std::endl;
+      std::cout << "  store " << init_val_str << ", " << ir_id << std::endl;
     }
     return "";
   }

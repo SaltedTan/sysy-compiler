@@ -101,9 +101,23 @@ Stmt
     ast->exp = unique_ptr<BaseAST>($3);
     $$ = ast;
   }
+  | Exp ';' {
+    $$ = $1;
+  }
+  | ';' {
+  $$ = nullptr;
+  }
+  | Block {
+    $$ = $1;
+  }
   | RETURN Exp ';' {
     auto ast = new ReturnStmtAST();
     ast->exp = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  }
+  | RETURN ';' {
+    auto ast = new ReturnStmtAST();
+    ast->exp = nullptr;
     $$ = ast;
   }
   ;
