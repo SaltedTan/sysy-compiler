@@ -67,6 +67,9 @@ void RiscVGenerator::Visit(const koopa_raw_function_t &func) {
 }
 
 void RiscVGenerator::Visit(const koopa_raw_basic_block_t &bb) {
+  string name = bb->name;
+  name.erase(0, 1);
+  cout << endl << name << ":" << endl;
   Visit(bb->insts);
 }
 
@@ -100,6 +103,16 @@ void RiscVGenerator::Visit(const koopa_raw_value_t &value) {
 
   case KOOPA_RVT_LOAD: {
     VisitLoad(kind.data.load, value);
+    break;
+  }
+
+  case KOOPA_RVT_BRANCH: {
+    VisitBranch(kind.data.branch);
+    break;
+  }
+
+  case KOOPA_RVT_JUMP: {
+    VisitJump(kind.data.jump);
     break;
   }
 
@@ -206,6 +219,26 @@ void RiscVGenerator::VisitLoad(const koopa_raw_load_t &load,
 
   int dest_offset = stack_map[value];
   cout << "  sw t0, " << dest_offset << "(sp)" << endl;
+}
+
+void RiscVGenerator::VisitBranch(const koopa_raw_branch_t &branch) {
+  string cond_reg = FetchOperand(branch.cond, "t0");
+
+  string true_target_name = branch.true_bb->name;
+  true_target_name.erase(0, 1);
+
+  string false_target_name = branch.false_bb->name;
+  false_target_name.erase(0, 1);
+
+  cout << "  bnez " << cond_reg << ", " << true_target_name << endl;
+  cout << "  j " << false_target_name << endl;
+}
+
+void RiscVGenerator::VisitJump(const koopa_raw_jump_t &jump) {
+  string target_name = jump.target->name;
+  target_name.erase(0, 1);
+
+  cout << "  j " << target_name << endl;
 }
 
 string RiscVGenerator::FetchOperand(const koopa_raw_value_t &operand,

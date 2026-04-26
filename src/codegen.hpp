@@ -24,6 +24,8 @@ private:
                    const koopa_raw_value_t &value);
   void VisitStore(const koopa_raw_store_t &store);
   void VisitLoad(const koopa_raw_load_t &load, const koopa_raw_value_t &value);
+  void VisitBranch(const koopa_raw_branch_t &branch);
+  void VisitJump(const koopa_raw_jump_t &jump);
 
   std::string FetchOperand(const koopa_raw_value_t &operand,
                            const std::string &temp_reg);
