@@ -31,6 +31,7 @@ using namespace std;
 %token <int_val> INT_CONST
 %token LE GE EQ NE AND OR
 %token CONST
+%token IF THEN ELSE
 
 %type <ast_val> FuncDef FuncType Block Stmt Number
 %type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
@@ -38,6 +39,7 @@ using namespace std;
 %type <ast_val> Decl ConstDecl ConstDefList ConstDef ConstInitVal
 %type <ast_val> BlockItem BlockItemList LVal ConstExp
 %type <ast_val> VarDecl VarDefList VarDef InitVal 
+%type <ast_val> MatchedStmt UnmatchedStmt
 
 %%
 
@@ -95,7 +97,23 @@ BlockItem
   ;
 
 Stmt
-  : LVal '=' Exp ';' {
+  : MatchedStmt {
+    $$ = $1;
+  }
+  | UnmatchedStmt {
+    $$ = $1;
+  }
+  ;
+
+MatchedStmt
+  : IF '(' Exp ')' MatchedStmt ELSE MatchedStmt {
+    auto ast = new IfStmtAST();
+    ast->cond = unique_ptr<BaseAST>($3);
+    ast->then_branch = unique_ptr<BaseAST>($5);
+    ast->else_branch = unique_ptr<BaseAST>($7);
+    $$ = ast;
+  }
+  | LVal '=' Exp ';' {
     auto ast = new AssignStmtAST();
     ast->lVal = unique_ptr<BaseAST>($1);
     ast->exp = unique_ptr<BaseAST>($3);
@@ -118,6 +136,23 @@ Stmt
   | RETURN ';' {
     auto ast = new ReturnStmtAST();
     ast->exp = nullptr;
+    $$ = ast;
+  }
+  ;
+
+UnmatchedStmt
+  : IF '(' Exp ')' Stmt {
+    auto ast = new IfStmtAST();
+    ast->cond = unique_ptr<BaseAST>($3);
+    ast->then_branch = unique_ptr<BaseAST>($5);
+    ast->else_branch = nullptr;
+    $$ = ast;
+  }
+  | IF '(' Exp ')' MatchedStmt ELSE UnmatchedStmt {
+    auto ast = new IfStmtAST();
+    ast->cond = unique_ptr<BaseAST>($3);
+    ast->then_branch = unique_ptr<BaseAST>($5);
+    ast->else_branch = unique_ptr<BaseAST>($7);
     $$ = ast;
   }
   ;

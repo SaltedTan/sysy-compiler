@@ -8,6 +8,8 @@
 #include <unordered_map>
 #include <vector>
 
+inline bool is_block_terminated = false;
+
 inline std::string next_ir_reg() {
   static int ir_reg_cnt = 0;
   return "%" + std::to_string(ir_reg_cnt++);
@@ -108,6 +110,7 @@ public:
     func_type->Dump();
     std::cout << " {" << std::endl;
     std::cout << "%entry:" << std::endl;
+    is_block_terminated = false;
     block->Dump();
     std::cout << "}" << std::endl;
     return "";
@@ -133,6 +136,8 @@ public:
     for (const auto &item : items) {
       if (item != nullptr) {
         item->Dump();
+        if (is_block_terminated)
+          break;
       }
     }
     symbol_table.exit_scope();
@@ -168,12 +173,11 @@ public:
     if (exp) {
       std::string ret_val = exp->Dump();
       std::cout << "  ret " << ret_val << std::endl;
-      return "";
-
     } else {
       std::cout << "  ret" << std::endl;
-      return "";
     }
+    is_block_terminated = true;
+    return "";
   }
 };
 
@@ -363,6 +367,54 @@ public:
       std::string init_val_str = initVal->Dump();
       std::cout << "  store " << init_val_str << ", " << ir_id << std::endl;
     }
+    return "";
+  }
+};
+
+class IfStmtAST : public BaseAST {
+public:
+  std::unique_ptr<BaseAST> cond;
+  std::unique_ptr<BaseAST> then_branch;
+  std::unique_ptr<BaseAST> else_branch; // Might be nullptr
+
+  std::string Dump() const override {
+    static int if_cnt = 0;
+    int current_if = if_cnt++;
+
+    std::string then_block = "%then_" + std::to_string(current_if);
+    std::string else_block = "%else_" + std::to_string(current_if);
+    std::string end_block = "%end_" + std::to_string(current_if);
+
+    std::string cond_reg = cond->Dump();
+
+    if (else_branch) {
+      std::cout << "  br " << cond_reg << ", " << then_block << ", "
+                << else_block << std::endl;
+    } else {
+      std::cout << "  br " << cond_reg << ", " << then_block << ", "
+                << end_block << std::endl;
+    }
+
+    std::cout << std::endl << then_block << ":" << std::endl;
+    is_block_terminated = false;
+    if (then_branch)
+      then_branch->Dump();
+    if (!is_block_terminated) {
+      std::cout << "  jump " << end_block << std::endl;
+    }
+
+    if (else_branch) {
+      std::cout << std::endl << else_block << ":" << std::endl;
+      is_block_terminated = false;
+      else_branch->Dump();
+      if (!is_block_terminated) {
+        std::cout << "  jump " << end_block << std::endl;
+      }
+    }
+
+    std::cout << std::endl << end_block << ":" << std::endl;
+    is_block_terminated = false;
+
     return "";
   }
 };
