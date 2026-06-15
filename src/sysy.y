@@ -32,6 +32,7 @@ using namespace std;
 %token LE GE EQ NE AND OR
 %token CONST
 %token IF THEN ELSE
+%token WHILE
 
 %type <ast_val> FuncDef FuncType Block Stmt Number
 %type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
@@ -113,6 +114,12 @@ MatchedStmt
     ast->else_branch = unique_ptr<BaseAST>($7);
     $$ = ast;
   }
+  | WHILE '(' Exp ')' MatchedStmt {
+    auto ast = new WhileStmtAST();
+    ast->cond = unique_ptr<BaseAST>($3);
+    ast->body = unique_ptr<BaseAST>($5);
+    $$ = ast;
+  }
   | LVal '=' Exp ';' {
     auto ast = new AssignStmtAST();
     ast->lVal = unique_ptr<BaseAST>($1);
@@ -153,6 +160,12 @@ UnmatchedStmt
     ast->cond = unique_ptr<BaseAST>($3);
     ast->then_branch = unique_ptr<BaseAST>($5);
     ast->else_branch = unique_ptr<BaseAST>($7);
+    $$ = ast;
+  }
+  | WHILE '(' Exp ')' UnmatchedStmt {
+    auto ast = new WhileStmtAST();
+    ast->cond = unique_ptr<BaseAST>($3);
+    ast->body = unique_ptr<BaseAST>($5);
     $$ = ast;
   }
   ;

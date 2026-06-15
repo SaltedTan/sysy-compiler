@@ -463,3 +463,39 @@ public:
     return "";
   }
 };
+
+class WhileStmtAST : public StmtAST {
+public:
+  std::unique_ptr<BaseAST> cond;
+  std::unique_ptr<BaseAST> body;
+
+  std::string Dump() const override {
+    static int while_cnt = 0;
+    int current_while = while_cnt++;
+
+    std::string entry_block = "%while_entry_" + std::to_string(current_while);
+    std::string body_block = "%while_body_" + std::to_string(current_while);
+    std::string end_block = "%while_end_" + std::to_string(current_while);
+
+    std::cout << "  jump " << entry_block << std::endl;
+
+    std::cout << std::endl << entry_block << ":" << std::endl;
+    is_block_terminated = false;
+    std::string cond_reg = cond->Dump();
+    std::cout << "  br " << cond_reg << ", " << body_block << ", " << end_block
+              << std::endl;
+
+    std::cout << std::endl << body_block << ":" << std::endl;
+    is_block_terminated = false;
+    if (body)
+      body->Dump();
+    if (!is_block_terminated) {
+      std::cout << "  jump " << entry_block << std::endl;
+    }
+
+    std::cout << std::endl << end_block << ":" << std::endl;
+    is_block_terminated = false;
+
+    return "";
+  }
+};
