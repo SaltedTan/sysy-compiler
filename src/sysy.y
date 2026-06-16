@@ -33,6 +33,7 @@ using namespace std;
 %token CONST
 %token IF THEN ELSE
 %token WHILE
+%token BREAK CONTINUE
 
 %type <ast_val> FuncDef FuncType Block Stmt Number
 %type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
@@ -143,6 +144,14 @@ MatchedStmt
   | RETURN ';' {
     auto ast = new ReturnStmtAST();
     ast->exp = nullptr;
+    $$ = ast;
+  }
+  | BREAK ';' {
+    auto ast = new BreakStmtAST();
+    $$ = ast;
+  }
+  | CONTINUE ';' {
+    auto ast = new ContinueStmtAST();
     $$ = ast;
   }
   ;

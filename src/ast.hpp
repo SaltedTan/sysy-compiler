@@ -54,7 +54,41 @@ public:
   void exit_scope() { scope_stack.pop_back(); }
 };
 
+class LoopTracker {
+private:
+  std::vector<std::string> entry_stack;
+  std::vector<std::string> end_stack;
+
+public:
+  void push_loop(const std::string &entry_label, const std::string &end_label) {
+    entry_stack.push_back(entry_label);
+    end_stack.push_back(end_label);
+  }
+
+  void pop_loop() {
+    entry_stack.pop_back();
+    end_stack.pop_back();
+  }
+
+  std::string get_current_entry() {
+    if (entry_stack.empty()) {
+      std::cerr << "Error: 'continue' statement not within a loop" << std::endl;
+      exit(1);
+    }
+    return entry_stack.back();
+  };
+
+  std::string get_current_end() {
+    if (end_stack.empty()) {
+      std::cerr << "Error: 'break' statement not within a loop" << std::endl;
+      exit(1);
+    }
+    return end_stack.back();
+  }
+};
+
 inline Environment symbol_table;
+inline LoopTracker loop_tracker;
 
 inline std::string to_koopa_op(const std::string &op) {
   if (op == "+")
@@ -487,8 +521,10 @@ public:
 
     std::cout << std::endl << body_block << ":" << std::endl;
     is_block_terminated = false;
+    loop_tracker.push_loop(entry_block, end_block);
     if (body)
       body->Dump();
+    loop_tracker.pop_loop();
     if (!is_block_terminated) {
       std::cout << "  jump " << entry_block << std::endl;
     }
@@ -496,6 +532,26 @@ public:
     std::cout << std::endl << end_block << ":" << std::endl;
     is_block_terminated = false;
 
+    return "";
+  }
+};
+
+class BreakStmtAST : public StmtAST {
+public:
+  std::string Dump() const override {
+    std::string end_label = loop_tracker.get_current_end();
+    std::cout << "  jump " << end_label << std::endl;
+    is_block_terminated = true;
+    return "";
+  }
+};
+
+class ContinueStmtAST : public StmtAST {
+public:
+  std::string Dump() const override {
+    std::string entry_label = loop_tracker.get_current_entry();
+    std::cout << "  jump " << entry_label << std::endl;
+    is_block_terminated = true;
     return "";
   }
 };
