@@ -61,8 +61,8 @@ struct Value {
   ValueKind kind;
   Type *type = nullptr;
 
-  std::string name;    // e.g. "%0"; empty for constants
-  int const_value = 0; // only valid for constants
+  std::string name = ""; // e.g. "%0"; empty for constants
+  int const_value = 0;   // only valid for constants
 
   Instruction *def = nullptr;
 };

@@ -28,7 +28,7 @@ public:
 
   void emitStore(ir::Value *value, ir::Value *addr);
 
-  ir::Value *emitBinary(ir::BinaryOp op, ir::Value *lhs, ir::Value rhs);
+  ir::Value *emitBinary(ir::BinaryOp op, ir::Value *lhs, ir::Value *rhs);
 
   void emitJump(ir::BasicBlock *target);
 
