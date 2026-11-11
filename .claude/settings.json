@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "deny": [
+      "Edit(src/**)",
+      "Edit(CMakeLists.txt)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
