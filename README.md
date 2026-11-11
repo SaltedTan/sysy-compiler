@@ -182,17 +182,18 @@ the conventional mode name is `-riscv`.
 
 ## Local IDE Support
 
-The Docker build owns the main `build/` directory, so avoid running raw local
-CMake commands into that directory. To generate a local `compile_commands.json`
+The container mounts the repository at the same absolute path it has on the
+host and runs as your user, so `build/` stays owned by you and the paths CMake
+records are valid outside the container. To generate `compile_commands.json`
 for `clangd`, run:
 
 ```bash
 ./update_lsp.sh
 ```
 
-The script creates a temporary `build_local/` directory, copies
-`compile_commands.json` to the repo root, and removes the temporary directory so
-it does not collide with the Docker build.
+The script configures and builds `build/` inside the container with compile
+commands exported, then copies `compile_commands.json` to the repo root. The
+host needs Docker and `clangd`, but not CMake, Flex, or Bison.
 
 ## Implementation Notes
 
