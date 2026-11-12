@@ -35,6 +35,7 @@ using namespace std;
 %token WHILE
 %token BREAK CONTINUE
 
+%type <ast_val> CompUnitItem CompUnitList
 %type <ast_val> FuncDef FuncType Block Stmt Number
 %type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> UnaryOp MulOp AddOp RelOp EqOp
@@ -46,10 +47,30 @@ using namespace std;
 %%
 
 CompUnit
-  : FuncDef {
-    auto comp_unit = make_unique<CompUnitAST>();
-    comp_unit->func_def = unique_ptr<BaseAST>($1);
-    ast = std::move(comp_unit);
+  : CompUnitList {
+    ast = unique_ptr<BaseAST>($1);
+  }
+  ;
+
+CompUnitList
+  : CompUnitItem {
+    auto comp_unit = new CompUnitAST();
+    comp_unit->items.push_back(unique_ptr<BaseAST>($1));
+    $$ = comp_unit;
+  }
+  | CompUnitList CompUnitItem {
+    auto comp_unit = dynamic_cast<CompUnitAST*>($1);
+    comp_unit->items.push_back(unique_ptr<BaseAST>($2));
+    $$ = comp_unit;
+  }
+  ;
+
+CompUnitItem
+  : Decl {
+    $$ = $1;
+  }
+  | FuncDef {
+    $$ = $1;
   }
   ;
 

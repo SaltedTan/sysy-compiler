@@ -125,10 +125,14 @@ public:
 
 class CompUnitAST : public BaseAST {
 public:
-  std::unique_ptr<BaseAST> func_def;
+  std::vector<std::unique_ptr<BaseAST>> items;
 
   std::string Dump() const override {
-    func_def->Dump();
+    for (const auto &item : items) {
+      if (item != nullptr) {
+        item->Dump();
+      }
+    }
     return "";
   }
 };
