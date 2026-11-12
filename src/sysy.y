@@ -37,7 +37,7 @@ using namespace std;
 %token VOID
 
 %type <ast_val> CompUnitItem CompUnitList
-%type <ast_val> FuncDef Block Stmt Number
+%type <ast_val> FuncDef FuncFParamList FuncFParam Block Stmt Number
 %type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> UnaryOp MulOp AddOp RelOp EqOp
 %type <ast_val> Decl ConstDecl ConstDefList ConstDef ConstInitVal
@@ -82,6 +82,41 @@ FuncDef
     ast->func_type = *unique_ptr<string>($1);
     ast->ident = *unique_ptr<string>($2);
     ast->block = unique_ptr<BaseAST>($5);
+    $$ = ast;
+  }
+  | Type IDENT '(' FuncFParamList ')' Block {
+    auto ast = new FuncDefAST();
+    ast->func_type = *unique_ptr<string>($1);
+    ast->ident = *unique_ptr<string>($2);
+    ast->func_params = unique_ptr<BaseAST>($4);
+    ast->block = unique_ptr<BaseAST>($6);
+    $$ = ast;
+  }
+  ;
+
+FuncFParamList
+  : FuncFParam {
+    auto ast = new FuncFParamsAST();
+    ast->params.push_back(unique_ptr<BaseAST>($1));
+    $$ = ast;
+  }
+  | FuncFParamList ',' FuncFParam {
+    auto ast = dynamic_cast<FuncFParamsAST*>($1);
+    ast->params.push_back(unique_ptr<BaseAST>($3));
+    $$ = ast;
+  }
+  ;
+
+FuncFParam
+  : Type IDENT {
+    auto ast = new FuncFParamAST();
+    ast->param_type = *unique_ptr<string>($1);
+    ast->ident = *unique_ptr<string>($2);
+    if (ast->param_type == "void") {
+      cerr << "Error: Parameter '" << ast->ident << "' cannot have type 'void'"
+           << std::endl;
+      exit(1);
+    }
     $$ = ast;
   }
   ;

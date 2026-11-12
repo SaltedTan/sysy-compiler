@@ -141,18 +141,58 @@ class FuncDefAST : public BaseAST {
 public:
   std::string func_type;
   std::string ident;
+  std::unique_ptr<BaseAST> func_params;
   std::unique_ptr<BaseAST> block;
 
   std::string Dump() const override {
-    std::cout << "fun @" << ident << "()";
-    if (func_type == "int") {
-      std::cout << ": " << "i32";
+    std::cout << "fun @" << ident << "(";
+    if (func_params != nullptr) {
+      func_params->Dump();
     }
+    std::cout << ")";
+
+    if (func_type == "void") { // void: Koopa omits the return type
+    } else if (func_type == "int") {
+      std::cout << ": " << "i32";
+    } else {
+      assert(false && "Unknown function return type");
+    }
+
     std::cout << " {" << std::endl;
     std::cout << "%entry:" << std::endl;
     is_block_terminated = false;
     block->Dump();
     std::cout << "}" << std::endl;
+    return "";
+  }
+};
+
+class FuncFParamsAST : public BaseAST {
+public:
+  std::vector<std::unique_ptr<BaseAST>> params;
+
+  std::string Dump() const override {
+    bool first = true;
+    for (const auto &param : params) {
+      if (!first) {
+        std::cout << ", ";
+      }
+      param->Dump();
+      first = false;
+    }
+    return "";
+  }
+};
+
+class FuncFParamAST : public BaseAST {
+public:
+  std::string param_type;
+  std::string ident;
+
+  std::string Dump() const override {
+    std::cout << "@" << ident << ": ";
+    assert(param_type == "int" && "Unknown parameter type");
+    std::cout << "i32";
     return "";
   }
 };
