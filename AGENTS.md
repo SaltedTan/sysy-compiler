@@ -27,7 +27,8 @@ front end, AST, Koopa IR, RISC-V (RV32I) assembly.
   else.
 - Never paste a working implementation of the feature I am building, in a file
   or in chat. No complete functions, grammar rules, or emitter code for it.
-- Do not commit, push, or rewrite Git history. I commit my own work.
+- Commit or push only when I ask. Never rewrite Git history (no amend, rebase,
+  force-push, or reset of pushed commits).
 
 ## How to help
 
