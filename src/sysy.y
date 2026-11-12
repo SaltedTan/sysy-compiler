@@ -34,15 +34,17 @@ using namespace std;
 %token IF THEN ELSE
 %token WHILE
 %token BREAK CONTINUE
+%token VOID
 
 %type <ast_val> CompUnitItem CompUnitList
-%type <ast_val> FuncDef FuncType Block Stmt Number
+%type <ast_val> FuncDef Block Stmt Number
 %type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> UnaryOp MulOp AddOp RelOp EqOp
 %type <ast_val> Decl ConstDecl ConstDefList ConstDef ConstInitVal
 %type <ast_val> BlockItem BlockItemList LVal ConstExp
 %type <ast_val> VarDecl VarDefList VarDef InitVal 
 %type <ast_val> MatchedStmt UnmatchedStmt
+%type <str_val> Type
 
 %%
 
@@ -75,19 +77,11 @@ CompUnitItem
   ;
 
 FuncDef
-  : FuncType IDENT '(' ')' Block {
+  : Type IDENT '(' ')' Block {
     auto ast = new FuncDefAST();
-    ast->func_type = unique_ptr<BaseAST>($1);
+    ast->func_type = *unique_ptr<string>($1);
     ast->ident = *unique_ptr<string>($2);
     ast->block = unique_ptr<BaseAST>($5);
-    $$ = ast;
-  }
-  ;
-
-FuncType
-  : INT {
-    auto ast = new FuncTypeAST();
-    ast->type_name = "int";
     $$ = ast;
   }
   ;
@@ -410,9 +404,9 @@ Decl
   }
   ;
 
-// ConstDecl ::= "const" BType ConstDef {"," ConstDef} ";"
 ConstDecl
-  : CONST BType ConstDefList ';' {
+  : CONST Type ConstDefList ';' {
+    delete $2;
     $$ = $3;
   }
   ;
@@ -430,8 +424,13 @@ ConstDefList
   }
   ;
 
-BType
-  : INT
+Type
+  : VOID {
+    $$ = new string("void");
+  }
+  | INT {
+    $$ = new string("int");
+  }
   ;
 
 ConstDef
@@ -449,9 +448,9 @@ ConstInitVal
   }
   ;
 
-// VarDecl ::= BType VarDef {"," VarDef} ";"
 VarDecl
-  : BType VarDefList ';' {
+  : Type VarDefList ';' {
+    delete $1;
     $$ = $2;
   }
   ;

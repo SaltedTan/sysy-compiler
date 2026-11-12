@@ -139,28 +139,20 @@ public:
 
 class FuncDefAST : public BaseAST {
 public:
-  std::unique_ptr<BaseAST> func_type;
+  std::string func_type;
   std::string ident;
   std::unique_ptr<BaseAST> block;
 
   std::string Dump() const override {
-    std::cout << "fun @" << ident << "(): ";
-    func_type->Dump();
+    std::cout << "fun @" << ident << "()";
+    if (func_type == "int") {
+      std::cout << ": " << "i32";
+    }
     std::cout << " {" << std::endl;
     std::cout << "%entry:" << std::endl;
     is_block_terminated = false;
     block->Dump();
     std::cout << "}" << std::endl;
-    return "";
-  }
-};
-
-class FuncTypeAST : public BaseAST {
-public:
-  std::string type_name;
-
-  std::string Dump() const override {
-    std::cout << "i32";
     return "";
   }
 };
