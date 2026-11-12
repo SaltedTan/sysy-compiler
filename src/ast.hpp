@@ -313,6 +313,38 @@ public:
   }
 };
 
+class FuncCallAST : public BaseAST {
+public:
+  std::string ident;
+  std::unique_ptr<BaseAST> args;
+
+  std::string Dump() const override {
+    std::cout << "call @" << ident << "(";
+    if (args != nullptr) {
+      args->Dump();
+    }
+    std::cout << ")";
+    return "";
+  }
+};
+
+class FuncRParamsAST : public BaseAST {
+public:
+  std::vector<std::unique_ptr<BaseAST>> exps;
+
+  std::string Dump() const override {
+    bool first = true;
+    for (const auto &exp : exps) {
+      if (!first) {
+        std::cout << ", ";
+      }
+      exp->Dump();
+      first = false;
+    }
+    return "";
+  }
+};
+
 class BinaryExpAST : public BaseAST {
 public:
   std::unique_ptr<BaseAST> lhs;

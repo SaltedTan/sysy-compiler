@@ -37,7 +37,7 @@ using namespace std;
 %token VOID
 
 %type <ast_val> CompUnitItem CompUnitList
-%type <ast_val> FuncDef FuncFParamList FuncFParam Block Stmt Number
+%type <ast_val> FuncDef FuncFParamList FuncFParam FuncRParamList Block Stmt Number
 %type <ast_val> Exp PrimaryExp UnaryExp MulExp AddExp RelExp EqExp LAndExp LOrExp
 %type <ast_val> UnaryOp MulOp AddOp RelOp EqOp
 %type <ast_val> Decl ConstDecl ConstDefList ConstDef ConstInitVal
@@ -259,10 +259,34 @@ UnaryExp
   : PrimaryExp {
     $$ = $1;
   }
+  | IDENT '(' ')' {
+    auto ast = new FuncCallAST();
+    ast->ident = *unique_ptr<string>($1);
+    $$ = ast;
+  }
+  | IDENT '(' FuncRParamList ')' {
+    auto ast = new FuncCallAST();
+    ast->ident = *unique_ptr<string>($1);
+    ast->args = unique_ptr<BaseAST>($3);
+    $$ = ast;
+  }
   | UnaryOp UnaryExp {
     auto ast = new UnaryExpAST();
     ast->op = unique_ptr<BaseAST>($1);
     ast->exp = unique_ptr<BaseAST>($2);
+    $$ = ast;
+  }
+  ;
+
+FuncRParamList
+  : Exp {
+    auto ast = new FuncRParamsAST();
+    ast->exps.push_back(unique_ptr<BaseAST>($1));
+    $$ = ast;
+  }
+  | FuncRParamList ',' Exp {
+    auto ast = dynamic_cast<FuncRParamsAST*>($1);
+    ast->exps.push_back(unique_ptr<BaseAST>($3));
     $$ = ast;
   }
   ;
