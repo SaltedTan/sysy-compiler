@@ -24,6 +24,7 @@ using namespace std;
   std::string *str_val;
   int int_val;
   BaseAST *ast_val;
+  BaseType base_type;
 }
 
 %token INT RETURN
@@ -44,7 +45,7 @@ using namespace std;
 %type <ast_val> BlockItem BlockItemList LVal ConstExp
 %type <ast_val> VarDecl VarDefList VarDef InitVal 
 %type <ast_val> MatchedStmt UnmatchedStmt
-%type <str_val> Type
+%type <base_type> Type
 
 %%
 
@@ -79,14 +80,14 @@ CompUnitItem
 FuncDef
   : Type IDENT '(' ')' Block {
     auto ast = new FuncDefAST();
-    ast->func_type = *unique_ptr<string>($1);
+    ast->func_type = $1;
     ast->ident = *unique_ptr<string>($2);
     ast->block = unique_ptr<BaseAST>($5);
     $$ = ast;
   }
   | Type IDENT '(' FuncFParamList ')' Block {
     auto ast = new FuncDefAST();
-    ast->func_type = *unique_ptr<string>($1);
+    ast->func_type = $1;
     ast->ident = *unique_ptr<string>($2);
     ast->func_params = unique_ptr<BaseAST>($4);
     ast->block = unique_ptr<BaseAST>($6);
@@ -110,9 +111,9 @@ FuncFParamList
 FuncFParam
   : Type IDENT {
     auto ast = new FuncFParamAST();
-    ast->param_type = *unique_ptr<string>($1);
+    ast->param_type = $1;
     ast->ident = *unique_ptr<string>($2);
-    if (ast->param_type == "void") {
+    if (ast->param_type == BaseType::Void) {
       cerr << "Error: Parameter '" << ast->ident << "' cannot have type 'void'"
            << std::endl;
       exit(1);
@@ -465,7 +466,6 @@ Decl
 
 ConstDecl
   : CONST Type ConstDefList ';' {
-    delete $2;
     $$ = $3;
   }
   ;
@@ -485,10 +485,10 @@ ConstDefList
 
 Type
   : VOID {
-    $$ = new string("void");
+    $$ = BaseType::Void;
   }
   | INT {
-    $$ = new string("int");
+    $$ = BaseType::Int;
   }
   ;
 
@@ -509,7 +509,6 @@ ConstInitVal
 
 VarDecl
   : Type VarDefList ';' {
-    delete $1;
     $$ = $2;
   }
   ;

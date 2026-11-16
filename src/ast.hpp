@@ -26,12 +26,18 @@ struct Symbol {
   std::string ir_id;
 };
 
-class Environment {
+enum class BaseType { Void, Int };
+
+struct FunctionSymbol {
+  BaseType type;
+};
+
+class SymbolTable {
 private:
   std::vector<std::unordered_map<std::string, Symbol>> scope_stack;
 
 public:
-  Environment() { scope_stack.push_back({}); }
+  SymbolTable() { scope_stack.push_back({}); }
 
   void insert(const std::string &name, Symbol sym) {
     scope_stack.back()[name] = sym;
@@ -52,6 +58,26 @@ public:
   void enter_scope() { scope_stack.push_back({}); }
 
   void exit_scope() { scope_stack.pop_back(); }
+};
+
+class FunctionTable {
+private:
+  std::unordered_map<std::string, FunctionSymbol> functions;
+
+public:
+  void insert(const std::string &name, FunctionSymbol func) {
+    functions[name] = func;
+  }
+
+  FunctionSymbol lookup(const std::string &name) const {
+    auto found = functions.find(name);
+    if (found != functions.end()) {
+      return found->second;
+    }
+
+    std::cerr << "Error: Undefined function '" << name << "'" << std::endl;
+    exit(1);
+  }
 };
 
 class LoopTracker {
@@ -87,7 +113,8 @@ public:
   }
 };
 
-inline Environment symbol_table;
+inline SymbolTable symbol_table;
+inline FunctionTable function_table;
 inline LoopTracker loop_tracker;
 
 inline std::string to_koopa_op(const std::string &op) {
@@ -139,7 +166,7 @@ public:
 
 class FuncDefAST : public BaseAST {
 public:
-  std::string func_type;
+  BaseType func_type;
   std::string ident;
   std::unique_ptr<BaseAST> func_params;
   std::unique_ptr<BaseAST> block;
@@ -151,12 +178,14 @@ public:
     }
     std::cout << ")";
 
-    if (func_type == "void") { // void: Koopa omits the return type
-    } else if (func_type == "int") {
+    switch (func_type) {
+    case BaseType::Void:
+      break; // void: Koopa omits the return type
+    case BaseType::Int:
       std::cout << ": " << "i32";
-    } else {
-      assert(false && "Unknown function return type");
     }
+
+    function_table.insert(ident, {func_type});
 
     std::cout << " {" << std::endl;
     std::cout << "%entry:" << std::endl;
@@ -186,12 +215,12 @@ public:
 
 class FuncFParamAST : public BaseAST {
 public:
-  std::string param_type;
+  BaseType param_type;
   std::string ident;
 
   std::string Dump() const override {
     std::cout << "@" << ident << ": ";
-    assert(param_type == "int" && "Unknown parameter type");
+    assert(param_type == BaseType::Int && "Unknown parameter type");
     std::cout << "i32";
     return "";
   }
@@ -319,12 +348,24 @@ public:
   std::unique_ptr<BaseAST> args;
 
   std::string Dump() const override {
-    std::cout << "call @" << ident << "(";
+    std::string arg_regs;
+
     if (args != nullptr) {
-      args->Dump();
+      arg_regs = args->Dump();
     }
-    std::cout << ")";
-    return "";
+
+    FunctionSymbol func = function_table.lookup(ident);
+    if (func.type == BaseType::Void) {
+      std::cout << "  call @" << ident << "(" << arg_regs << ")" << std::endl;
+      return "";
+    } else {
+      std::string new_reg = next_ir_reg();
+
+      std::cout << "  " << new_reg << " = call @" << ident << "(" << arg_regs
+                << ")" << std::endl;
+
+      return new_reg;
+    }
   }
 };
 
@@ -333,15 +374,16 @@ public:
   std::vector<std::unique_ptr<BaseAST>> exps;
 
   std::string Dump() const override {
+    std::string output_regs;
     bool first = true;
     for (const auto &exp : exps) {
       if (!first) {
-        std::cout << ", ";
+        output_regs += ", ";
       }
-      exp->Dump();
+      output_regs += exp->Dump();
       first = false;
     }
-    return "";
+    return output_regs;
   }
 };
 
