@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <ostream>
@@ -27,6 +28,16 @@ struct Symbol {
 };
 
 enum class BaseType { Void, Int };
+
+inline std::string to_koopa_type(const BaseType t) {
+  switch (t) {
+  case BaseType::Int:
+    return "i32";
+  case BaseType::Void:
+    std::abort();
+  }
+  std::abort();
+}
 
 struct FunctionSymbol {
   BaseType type;
@@ -164,41 +175,22 @@ public:
   }
 };
 
-class FuncDefAST : public BaseAST {
+class FuncFParamAST : public BaseAST {
 public:
-  BaseType func_type;
+  BaseType param_type;
   std::string ident;
-  std::unique_ptr<BaseAST> func_params;
-  std::unique_ptr<BaseAST> block;
 
   std::string Dump() const override {
-    std::cout << "fun @" << ident << "(";
-    if (func_params != nullptr) {
-      func_params->Dump();
-    }
-    std::cout << ")";
-
-    switch (func_type) {
-    case BaseType::Void:
-      break; // void: Koopa omits the return type
-    case BaseType::Int:
-      std::cout << ": " << "i32";
-    }
-
-    function_table.insert(ident, {func_type});
-
-    std::cout << " {" << std::endl;
-    std::cout << "%entry:" << std::endl;
-    is_block_terminated = false;
-    block->Dump();
-    std::cout << "}" << std::endl;
+    std::cout << "@" << ident << ": ";
+    assert(param_type == BaseType::Int && "Unknown parameter type");
+    std::cout << to_koopa_type(param_type);
     return "";
   }
 };
 
 class FuncFParamsAST : public BaseAST {
 public:
-  std::vector<std::unique_ptr<BaseAST>> params;
+  std::vector<std::unique_ptr<FuncFParamAST>> params;
 
   std::string Dump() const override {
     bool first = true;
@@ -213,15 +205,62 @@ public:
   }
 };
 
-class FuncFParamAST : public BaseAST {
+class FuncDefAST : public BaseAST {
 public:
-  BaseType param_type;
+  BaseType func_type;
   std::string ident;
+  std::unique_ptr<FuncFParamsAST> func_params;
+  std::unique_ptr<BaseAST> block;
 
   std::string Dump() const override {
-    std::cout << "@" << ident << ": ";
-    assert(param_type == BaseType::Int && "Unknown parameter type");
-    std::cout << "i32";
+    std::cout << "fun @" << ident << "(";
+    if (func_params != nullptr) {
+      func_params->Dump();
+    }
+    std::cout << ")";
+
+    if (func_type != BaseType::Void) { // void: Koopa omits the return type
+      std::cout << ": " << to_koopa_type(func_type);
+    }
+
+    function_table.insert(ident, {func_type});
+
+    std::cout << " {" << std::endl;
+    std::cout << "%entry:" << std::endl;
+    is_block_terminated = false;
+
+    symbol_table.enter_scope();
+
+    if (func_params != nullptr) {
+      for (const auto &param : func_params->params) {
+        assert(param->param_type != BaseType::Void &&
+               "Parameter type cannot be 'void'");
+
+        std::string param_reg = next_ir_reg();
+        std::cout << "  " << param_reg << " = alloc "
+                  << to_koopa_type(param->param_type) << std::endl;
+        std::cout << "  store @" << param->ident << ", " << param_reg
+                  << std::endl;
+
+        symbol_table.insert(param->ident, {false, 0, param_reg});
+      }
+    }
+
+    block->Dump();
+    if (!is_block_terminated) {
+      std::cout << "  ret";
+      switch (func_type) {
+      case BaseType::Void:
+        break;
+      case BaseType::Int:
+        std::cout << " 0";
+        break;
+      }
+      std::cout << std::endl;
+    }
+    std::cout << "}" << std::endl;
+    symbol_table.exit_scope();
+
     return "";
   }
 };

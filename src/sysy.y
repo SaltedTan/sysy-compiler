@@ -89,7 +89,7 @@ FuncDef
     auto ast = new FuncDefAST();
     ast->func_type = $1;
     ast->ident = *unique_ptr<string>($2);
-    ast->func_params = unique_ptr<BaseAST>($4);
+    ast->func_params = unique_ptr<FuncFParamsAST>(dynamic_cast<FuncFParamsAST*>($4));
     ast->block = unique_ptr<BaseAST>($6);
     $$ = ast;
   }
@@ -98,12 +98,12 @@ FuncDef
 FuncFParamList
   : FuncFParam {
     auto ast = new FuncFParamsAST();
-    ast->params.push_back(unique_ptr<BaseAST>($1));
+    ast->params.push_back(unique_ptr<FuncFParamAST>(dynamic_cast<FuncFParamAST*>($1)));
     $$ = ast;
   }
   | FuncFParamList ',' FuncFParam {
     auto ast = dynamic_cast<FuncFParamsAST*>($1);
-    ast->params.push_back(unique_ptr<BaseAST>($3));
+    ast->params.push_back(unique_ptr<FuncFParamAST>(dynamic_cast<FuncFParamAST*>($3)));
     $$ = ast;
   }
   ;
