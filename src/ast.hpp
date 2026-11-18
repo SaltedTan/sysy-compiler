@@ -27,12 +27,14 @@ struct Symbol {
   std::string ir_id;
 };
 
-enum class BaseType { Void, Int };
+enum class BaseType { Void, Int, Array };
 
 inline std::string to_koopa_type(const BaseType t) {
   switch (t) {
   case BaseType::Int:
     return "i32";
+  case BaseType::Array:
+    return "*i32";
   case BaseType::Void:
     std::abort();
   }
@@ -41,6 +43,23 @@ inline std::string to_koopa_type(const BaseType t) {
 
 struct FunctionSymbol {
   BaseType type;
+};
+
+struct FunctionSignature {
+  std::string ident;
+  BaseType return_type;
+  std::vector<BaseType> param_types;
+};
+
+const std::vector<FunctionSignature> library_functions = {
+    {"getint", BaseType::Int, {}},
+    {"getch", BaseType::Int, {}},
+    {"getarray", BaseType::Int, {BaseType::Array}},
+    {"putint", BaseType::Void, {BaseType::Int}},
+    {"putch", BaseType::Void, {BaseType::Int}},
+    {"putarray", BaseType::Void, {BaseType::Int, BaseType::Array}},
+    {"starttime", BaseType::Void, {}},
+    {"stoptime", BaseType::Void, {}},
 };
 
 class SymbolTable {
@@ -166,6 +185,29 @@ public:
   std::vector<std::unique_ptr<BaseAST>> items;
 
   std::string Dump() const override {
+    for (const auto &lib_func : library_functions) {
+      std::cout << "decl @" << lib_func.ident << "(";
+      bool first = true;
+      for (const auto &lib_func_param : lib_func.param_types) {
+        if (!first) {
+          std::cout << ", ";
+        }
+        std::cout << to_koopa_type(lib_func_param);
+        first = false;
+      }
+      std::cout << ")";
+      if (lib_func.return_type !=
+          BaseType::Void) { // void: Koopa omits the return type
+        std::cout << ": " << to_koopa_type(lib_func.return_type);
+      }
+
+      std::cout << std::endl;
+
+      function_table.insert(lib_func.ident, {lib_func.return_type});
+    }
+
+    std::cout << std::endl;
+
     for (const auto &item : items) {
       if (item != nullptr) {
         item->Dump();
@@ -254,6 +296,8 @@ public:
         break;
       case BaseType::Int:
         std::cout << " 0";
+        break;
+      case BaseType::Array:
         break;
       }
       std::cout << std::endl;
