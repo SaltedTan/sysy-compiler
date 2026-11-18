@@ -31,6 +31,10 @@ void RiscVGenerator::Visit(const koopa_raw_slice_t &slice) {
 }
 
 void RiscVGenerator::Visit(const koopa_raw_function_t &func) {
+  if (func->bbs.len == 0) { // decl: no body to emit
+    return;
+  }
+
   stack_map.clear();
   current_stack_size = 0;
   aligned_stack_size = 0;
